@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Edit question - Online Exam System</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --ink: #101828;
+            --muted: #475467;
+            --paper: #f3f5f9;
+            --surface: #ffffff;
+            --brand: #3b3fd8;
+            --brand-dark: #2b2fb0;
+            --bad: #b42318;
+            --line: #d9deea;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: var(--ink);
+            background: var(--paper);
+            min-height: 100vh;
+        }
+        h1 { font-weight: 800; letter-spacing: -0.02em; }
+        :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+        .page { padding: 1.5rem 0 2.5rem; }
+
+        .form-card {
+            background: var(--surface);
+            border: 2px solid var(--ink);
+            border-radius: 14px;
+            padding: 1.25rem;
+            max-width: 720px;
+            margin-inline: auto;
+        }
+        .form-card h1 { font-size: 1.75rem; margin-bottom: 1.25rem; }
+        .form-card hr { border-color: var(--line); opacity: 1; margin: 1.25rem 0; }
+
+        .form-label { font-weight: 600; }
+        .form-control, .form-select {
+            border: 1.5px solid var(--line);
+            border-radius: 10px;
+            padding: .75rem .9rem;
+            font-size: 1rem; /* 16px stops iOS zooming on focus */
+        }
+        .form-control:focus, .form-select:focus { border-color: var(--brand); box-shadow: 0 0 0 .2rem rgba(59, 63, 216, .2); }
+        .form-control.is-invalid, .form-select.is-invalid { border-color: var(--bad); }
+        .field-error { color: var(--bad); font-weight: 600; margin: .35rem 0 0; font-size: .95rem; }
+
+        .btn-brand {
+            background: var(--brand); color: #fff; font-weight: 600;
+            padding: .8rem 1.2rem; border-radius: 10px; border: 0;
+        }
+        .btn-brand:hover { background: var(--brand-dark); color: #fff; }
+        .btn-ghost {
+            font-weight: 600; padding: .8rem 1.2rem; border-radius: 10px;
+            border: 2px solid var(--ink); color: var(--ink); background: transparent;
+        }
+        .btn-ghost:hover { background: var(--ink); color: #fff; }
+
+        .back-link { max-width: 720px; margin: 0 auto 1rem; }
+        .back-link a { color: var(--brand); font-weight: 600; text-decoration: none; display: inline-block; padding: .25rem 0; }
+        .back-link a:hover { text-decoration: underline; }
+
+        /* Buttons: stacked and full-width on phones (main action on top), side by side from tablet up */
+        .form-actions { display: flex; flex-direction: column-reverse; gap: .75rem; }
+        @media (min-width: 576px) {
+            .page { padding: 2.5rem 0 3rem; }
+            .form-card { padding: 2rem; }
+            .form-actions { flex-direction: row; justify-content: flex-end; }
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments :: navbar}"></div>
+
+<main class="page">
+    <div class="container">
+
+        <div class="back-link">
+            <a th:href="@{/admin/exam/manage-questions/{id}(id=${question.exam.id})}">
+                <i class="bi bi-arrow-left me-1"></i>Back to questions
+            </a>
+        </div>
+
+        <div class="form-card">
+            <h1>Edit question</h1>
+
+            <!-- Pre-filled using th:object -->
+            <form th:action="@{/admin/question/update/{id}(id=${question.id})}" th:object="${question}" method="post">
+
+                <div class="mb-3">
+                    <label for="text" class="form-label">Question</label>
+                    <textarea class="form-control" id="text" th:field="*{text}" th:errorclass="is-invalid"
+                              rows="3" required></textarea>
+                    <p th:if="${#fields.hasErrors('text')}" class="field-error" th:errors="*{text}"></p>
+                </div>
+
+                <!-- Options: one per row on phones, two per row from tablet up -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="option1" class="form-label">Option 1</label>
+                        <input type="text" class="form-control" id="option1" th:field="*{option1}" th:errorclass="is-invalid" required>
+                        <p th:if="${#fields.hasErrors('option1')}" class="field-error" th:errors="*{option1}"></p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="option2" class="form-label">Option 2</label>
+                        <input type="text" class="form-control" id="option2" th:field="*{option2}" th:errorclass="is-invalid" required>
+                        <p th:if="${#fields.hasErrors('option2')}" class="field-error" th:errors="*{option2}"></p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="option3" class="form-label">Option 3</label>
+                        <input type="text" class="form-control" id="option3" th:field="*{option3}" th:errorclass="is-invalid" required>
+                        <p th:if="${#fields.hasErrors('option3')}" class="field-error" th:errors="*{option3}"></p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="option4" class="form-label">Option 4</label>
+                        <input type="text" class="form-control" id="option4" th:field="*{option4}" th:errorclass="is-invalid" required>
+                        <p th:if="${#fields.hasErrors('option4')}" class="field-error" th:errors="*{option4}"></p>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row">
+                    <div class="col-6 mb-4">
+                        <label for="correctAnswer" class="form-label">Correct answer</label>
+                        <select class="form-select" id="correctAnswer" th:field="*{correctAnswer}" th:errorclass="is-invalid" required>
+                            <option value="1">Option 1</option>
+                            <option value="2">Option 2</option>
+                            <option value="3">Option 3</option>
+                            <option value="4">Option 4</option>
+                        </select>
+                        <p th:if="${#fields.hasErrors('correctAnswer')}" class="field-error" th:errors="*{correctAnswer}"></p>
+                    </div>
+                    <div class="col-6 mb-4">
+                        <label for="marks" class="form-label">Marks</label>
+                        <input type="number" class="form-control" id="marks" th:field="*{marks}" th:errorclass="is-invalid"
+                               min="1" inputmode="numeric" required>
+                        <p th:if="${#fields.hasErrors('marks')}" class="field-error" th:errors="*{marks}"></p>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a th:href="@{/admin/exam/manage-questions/{id}(id=${question.exam.id})}" class="btn btn-ghost">Cancel</a>
+                    <button type="submit" class="btn btn-brand">Update question</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

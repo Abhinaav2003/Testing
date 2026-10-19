@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${exam.title}">Exam</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --ink: #101828;
+            --muted: #475467;
+            --paper: #f3f5f9;
+            --surface: #ffffff;
+            --brand: #3b3fd8;
+            --brand-dark: #2b2fb0;
+            --ok: #12805c;
+            --ok-dark: #0d6347;
+            --bad: #b42318;
+            --line: #d9deea;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: var(--ink);
+            background: var(--paper);
+            min-height: 100vh;
+        }
+        :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+        /* Student and exam details */
+        .info {
+            background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+            padding: .9rem 1rem; margin: 1rem 0;
+        }
+        .who { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+        .avatar {
+            flex: none; width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
+            border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+        }
+        .who-name { font-weight: 800; margin: 0; overflow-wrap: anywhere; }
+        .who-contact { color: var(--muted); font-size: .9rem; margin: 0; overflow-wrap: anywhere; }
+        .exam-facts {
+            display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; margin-top: .75rem; padding-top: .75rem;
+            border-top: 1px solid var(--line); font-size: .95rem; color: var(--muted); font-weight: 600;
+        }
+        .exam-facts strong { color: var(--ink); }
+
+        /* Sticky bar: always shows the question number and the time left */
+        .exam-bar {
+            position: sticky; top: 0; z-index: 20;
+            background: var(--ink); color: #fff;
+            padding: .6rem 0;
+        }
+        .exam-bar .container { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+        .exam-bar .progress-text { font-weight: 600; }
+        .timer-wrap { display: flex; align-items: center; gap: .5rem; font-weight: 600; }
+        #timer { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
+
+        /* Layout: single column on phones, question plus palette from desktop up */
+        .exam-layout { display: grid; grid-template-columns: 1fr; gap: 1rem; padding-bottom: 2.5rem; }
+        @media (min-width: 992px) {
+            .exam-layout { grid-template-columns: 1fr 320px; align-items: start; }
+            .palette { position: sticky; top: 76px; }
+        }
+
+        /* Question */
+        .question-card {
+            display: none; background: var(--surface); border: 2px solid var(--ink); border-radius: 14px;
+            padding: 1.1rem; scroll-margin-top: 76px;
+        }
+        .question-card.active { display: block; }
+        .q-head { color: var(--muted); font-weight: 700; margin: 0 0 .5rem; }
+        .q-text { font-size: 1.15rem; font-weight: 700; margin: 0 0 1.1rem; overflow-wrap: anywhere; }
+
+        /* Whole row is tappable */
+        .option {
+            display: flex; align-items: center; gap: .8rem; width: 100%;
+            min-height: 52px; padding: .7rem .9rem; margin-bottom: .6rem;
+            border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface);
+            cursor: pointer; overflow-wrap: anywhere;
+        }
+        .option:hover { border-color: var(--brand); }
+        .option input { flex: none; width: 1.25rem; height: 1.25rem; margin: 0; accent-color: var(--brand); }
+        .option.selected { border-color: var(--brand); background: #eef0ff; }
+        .option:last-child { margin-bottom: 0; }
+
+        .form-msg {
+            background: #fdecea; color: var(--bad); border-radius: 10px; font-weight: 600;
+            padding: .7rem .9rem; margin-bottom: 1rem; display: none;
+        }
+        .form-msg.show { display: block; }
+
+        /* Previous / Next */
+        .nav-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-top: 1rem; }
+        .btn-brand, .btn-ghost, .btn-submit {
+            display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+            min-height: 52px; font-weight: 600; border-radius: 10px; font-size: 1rem;
+        }
+        .btn-brand { background: var(--brand); color: #fff; border: 0; }
+        .btn-brand:hover { background: var(--brand-dark); color: #fff; }
+        .btn-ghost { border: 2px solid var(--ink); color: var(--ink); background: transparent; }
+        .btn-ghost:hover { background: var(--ink); color: #fff; }
+        .nav-row button:disabled { opacity: .45; cursor: not-allowed; }
+
+        /* Palette */
+        .palette {
+            background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1rem;
+        }
+        .palette-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; margin-bottom: .75rem; }
+        .palette-head h2 { font-size: 1.1rem; font-weight: 800; margin: 0; }
+        .palette-count { color: var(--muted); font-weight: 600; font-size: .95rem; }
+        .palette-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: .5rem; }
+        .q-palette-btn {
+            height: 44px; border: 1.5px solid var(--line); border-radius: 10px;
+            background: var(--paper); color: var(--ink); font-weight: 700; cursor: pointer;
+        }
+        .q-palette-btn:hover { border-color: var(--brand); }
+        .q-palette-btn.answered { background: var(--ok); border-color: var(--ok); color: #fff; }
+        .q-palette-btn.active { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--brand); } /* ring marks the current question */
+        .legend { color: var(--muted); font-size: .85rem; margin: .75rem 0 1rem; }
+
+        .btn-submit { width: 100%; background: var(--ok); color: #fff; border: 0; }
+        .btn-submit:hover { background: var(--ok-dark); color: #fff; }
+
+        @media (min-width: 576px) {
+            .question-card { padding: 1.5rem; }
+        }
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+    </style>
+</head>
+<body>
+
+<!-- Sticky bar -->
+<div class="exam-bar">
+    <div class="container">
+        <span class="progress-text">Question <span id="currentNum">1</span> of <span th:text="${#lists.size(questions)}">20</span></span>
+        <span class="timer-wrap" role="group" aria-label="Time left">
+            <i class="bi bi-stopwatch" aria-hidden="true"></i>
+            <span id="timer" role="timer">--:--</span>
+        </span>
+    </div>
+</div>
+
+<main class="container">
+
+    <!-- Student and exam details -->
+    <div class="info">
+        <div class="who">
+            <img th:if="${student.profilePicUrl != null}"
+                 th:src="@{${student.profilePicUrl}}" alt="" class="avatar">
+            <svg th:if="${student.profilePicUrl == null}"
+                 xmlns="http://www.w3.org/2000/svg" width="44" height="44" fill="currentColor"
+                 class="avatar" viewBox="0 0 16 16" aria-hidden="true">
+                <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
+                <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+            </svg>
+            <div style="min-width:0;">
+                <p class="who-name" th:text="${student.fullName}">Student name</p>
+                <p class="who-contact"><span th:text="${student.username}">student@example.com</span> &middot; <span th:text="${student.mobileNumber}">9572181024</span></p>
+            </div>
+        </div>
+        <div class="exam-facts">
+            <span><strong>Exam:</strong> <span th:text="${exam.title}">Exam title</span></span>
+            <span><strong>Time:</strong> <span th:text="${exam.durationInMinutes} + ' minutes'">60 minutes</span></span>
+            <span><strong>Questions:</strong> <span th:text="${#lists.size(questions)}">20</span></span>
+        </div>
+    </div>
+
+    <form id="exam-form" th:action="@{/exam/submit}" method="post">
+        <input type="hidden" name="examId" th:value="${exam.id}" />
+
+        <div class="exam-layout">
+
+            <!-- Questions -->
+            <div>
+                <div class="form-msg" id="formMsg" role="alert"></div>
+
+                <div th:each="question, iter : ${questions}"
+                     class="question-card"
+                     th:id="|q-card-${iter.index}|"
+                     th:data-question-index="${iter.index}">
+
+                    <p class="q-head" th:text="|Question ${iter.count} (Marks: ${question.marks})|">Question 1 (Marks: 1)</p>
+                    <p class="q-text" th:text="${question.text}">Question text...</p>
+
+                    <!-- required is on the first option; it applies to the whole group -->
+                    <label class="option" th:for="|q${question.id}_opt1|">
+                        <input type="radio" th:name="|q_${question.id}|" th:id="|q${question.id}_opt1|" value="1" required>
+                        <span th:text="${question.option1}">Option 1</span>
+                    </label>
+                    <label class="option" th:for="|q${question.id}_opt2|">
+                        <input type="radio" th:name="|q_${question.id}|" th:id="|q${question.id}_opt2|" value="2">
+                        <span th:text="${question.option2}">Option 2</span>
+                    </label>
+                    <label class="option" th:for="|q${question.id}_opt3|">
+                        <input type="radio" th:name="|q_${question.id}|" th:id="|q${question.id}_opt3|" value="3">
+                        <span th:text="${question.option3}">Option 3</span>
+                    </label>
+                    <label class="option" th:for="|q${question.id}_opt4|">
+                        <input type="radio" th:name="|q_${question.id}|" th:id="|q${question.id}_opt4|" value="4">
+                        <span th:text="${question.option4}">Option 4</span>
+                    </label>
+                </div>
+
+                <div class="nav-row">
+                    <button type="button" id="prev-btn" class="btn btn-ghost">
+                        <i class="bi bi-arrow-left"></i>Previous
+                    </button>
+                    <button type="button" id="next-btn" class="btn btn-brand">
+                        Next<i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Palette and submit -->
+            <div class="palette">
+                <div class="palette-head">
+                    <h2>Questions</h2>
+                    <span class="palette-count"><span id="answeredCount">0</span> of <span th:text="${#lists.size(questions)}">20</span> answered</span>
+                </div>
+                <div class="palette-grid">
+                    <button type="button"
+                            th:each="q, iter : ${questions}"
+                            class="q-palette-btn"
+                            th:text="${iter.count}"
+                            th:data-question-index="${iter.index}">
+                    </button>
+                </div>
+                <p class="legend">Green: answered. Ring: current question.</p>
+
+                <button type="submit" id="submit-btn" class="btn btn-submit">
+                    <i class="bi bi-check-circle-fill"></i>Submit exam
+                </button>
+            </div>
+        </div>
+    </form>
+</main>
+
+<script th:src="@{/js/exam-timer.js}"></script>
+
+<script th:inline="javascript">
+    document.addEventListener('DOMContentLoaded', function () {
+        // --- Timer ---
+        var durationInMinutes = /*[[${exam.durationInMinutes}]]*/ 60;
+        var timerDisplay = document.getElementById('timer');
+        var examForm = document.getElementById('exam-form');
+        startTimer(durationInMinutes, timerDisplay, examForm);
+
+        // --- Pagination ---
+        var questions = document.querySelectorAll('.question-card');
+        var paletteBtns = document.querySelectorAll('.q-palette-btn');
+        var prevBtn = document.getElementById('prev-btn');
+        var nextBtn = document.getElementById('next-btn');
+        var currentNum = document.getElementById('currentNum');
+        var answeredCount = document.getElementById('answeredCount');
+        var formMsg = document.getElementById('formMsg');
+        var phone = window.matchMedia('(max-width: 991.98px)');
+
+        var total = questions.length;
+        var current = 0;
+
+        function showQuestion(index, scroll) {
+            if (index < 0 || index >= total) return;
+            questions.forEach(function (q) { q.classList.remove('active'); });
+            var card = document.getElementById('q-card-' + index);
+            if (card) card.classList.add('active');
+            paletteBtns.forEach(function (b) {
+                b.classList.remove('active');
+                b.removeAttribute('aria-current');
+            });
+            var btn = document.querySelector('.q-palette-btn[data-question-index="' + index + '"]');
+            if (btn) { btn.classList.add('active'); btn.setAttribute('aria-current', 'true'); }
+            current = index;
+            currentNum.textContent = index + 1;
+            prevBtn.disabled = (current === 0);
+            nextBtn.disabled = (current === total - 1);
+            formMsg.classList.remove('show');
+            // On phones, bring the new question to the top of the screen
+            if (scroll && phone.matches && card) card.scrollIntoView({ block: 'start' });
+        }
+
+        nextBtn.addEventListener('click', function () { showQuestion(current + 1, true); });
+        prevBtn.addEventListener('click', function () { showQuestion(current - 1, true); });
+        paletteBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                showQuestion(parseInt(btn.getAttribute('data-question-index'), 10), true);
+            });
+        });
+
+        // --- Answered state (palette, highlighted option, counter) ---
+        function paletteLabel(btn, answered) {
+            btn.setAttribute('aria-label', 'Question ' + btn.textContent.trim() + (answered ? ', answered' : ', not answered'));
+        }
+        paletteBtns.forEach(function (b) { paletteLabel(b, false); });
+
+        function markAnswered(radio) {
+            // highlight the chosen option inside this question
+            var card = radio.closest('.question-card');
+            card.querySelectorAll('.option').forEach(function (o) {
+                o.classList.toggle('selected', o.contains(radio) && radio.checked);
+            });
+            var index = card.getAttribute('data-question-index');
+            var btn = document.querySelector('.q-palette-btn[data-question-index="' + index + '"]');
+            if (btn) { btn.classList.add('answered'); paletteLabel(btn, true); }
+            answeredCount.textContent = document.querySelectorAll('.q-palette-btn.answered').length;
+            formMsg.classList.remove('show');
+        }
+
+        var radios = document.querySelectorAll('input[type="radio"]');
+        radios.forEach(function (radio) {
+            radio.addEventListener('change', function () { markAnswered(radio); });
+            if (radio.checked) markAnswered(radio); // answers the browser restored on reload
+        });
+
+        // --- Unanswered question on submit ---
+        // Only the visible question can be focused, so without this the Submit button would
+        // appear to do nothing. Jump to the first unanswered question and say why.
+        var reported = false;
+        examForm.addEventListener('invalid', function (e) {
+            if (reported) return;
+            reported = true;
+            setTimeout(function () { reported = false; }, 0);
+            var card = e.target.closest('.question-card');
+            if (!card) return;
+            var index = parseInt(card.getAttribute('data-question-index'), 10);
+            showQuestion(index, true);
+            formMsg.textContent = 'Please answer question ' + (index + 1) + ' before submitting.';
+            formMsg.classList.add('show');
+        }, true);
+
+        showQuestion(0, false);
+    });
+</script>
+
+</body>
+</html>

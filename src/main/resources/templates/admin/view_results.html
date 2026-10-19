@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Exam results - Online Exam System</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --ink: #101828;
+            --muted: #475467;
+            --paper: #f3f5f9;
+            --surface: #ffffff;
+            --brand: #3b3fd8;
+            --ok: #12805c;
+            --bad: #b42318;
+            --line: #d9deea;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: var(--ink);
+            background: var(--paper);
+            min-height: 100vh;
+        }
+        h1 { font-weight: 800; letter-spacing: -0.02em; }
+        :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+        .page { padding: 1.5rem 0 2.5rem; }
+        .back-link a { color: var(--brand); font-weight: 600; text-decoration: none; display: inline-block; padding: .25rem 0; }
+        .back-link a:hover { text-decoration: underline; }
+
+        .page h1 { font-size: clamp(1.4rem, 5vw, 1.9rem); margin: .5rem 0 .25rem; overflow-wrap: anywhere; }
+        .page .sub { color: var(--muted); margin-bottom: 1.25rem; }
+
+        /* One card per submission */
+        .result-card {
+            background: var(--surface); border: 2px solid var(--ink); border-radius: 14px;
+            padding: 1rem; height: 100%;
+        }
+        .result-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; }
+        .student-name { font-weight: 800; font-size: 1.1rem; margin: 0; overflow-wrap: anywhere; }
+        .student-email { color: var(--muted); margin: .15rem 0 0; overflow-wrap: anywhere; }
+
+        .pct {
+            flex: none; display: inline-flex; align-items: center; gap: .35rem;
+            font-weight: 800; padding: .3rem .7rem; border-radius: 999px; white-space: nowrap;
+        }
+        .pct.pass { background: #e8f6f0; color: var(--ok); }
+        .pct.fail { background: #fdecea; color: var(--bad); }
+        .pct.na { background: var(--paper); color: var(--muted); }
+
+        .result-meta {
+            display: flex; flex-wrap: wrap; gap: .35rem 1.25rem; margin-top: .9rem; padding-top: .9rem;
+            border-top: 1px solid var(--line); color: var(--muted); font-weight: 600;
+        }
+        .result-meta i { color: var(--brand); margin-right: .3rem; }
+        .result-meta strong { color: var(--ink); }
+
+        .empty {
+            background: var(--surface); border: 2px dashed var(--line); border-radius: 14px;
+            padding: 2rem 1rem; text-align: center; color: var(--muted);
+        }
+        .empty i { font-size: 2rem; }
+
+        @media (min-width: 576px) {
+            .page { padding: 2.5rem 0 3rem; }
+            .result-card { padding: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments :: navbar}"></div>
+
+<main class="page">
+    <div class="container">
+
+        <div class="back-link">
+            <a th:href="@{/admin/manage-exams}"><i class="bi bi-arrow-left me-1"></i>Back to exams</a>
+        </div>
+
+        <h1 th:text="${exam.title}">Exam results</h1>
+        <p class="sub">All student submissions and scores for this exam.</p>
+
+        <div class="row g-3" th:unless="${#lists.isEmpty(results)}">
+            <div class="col-12 col-md-6 col-xl-4" th:each="result : ${results}">
+                <div class="result-card">
+
+                    <div class="result-top">
+                        <div>
+                            <p class="student-name" th:text="${result.student.fullName}">Student name</p>
+                            <p class="student-email" th:text="${result.student.username}">student@example.com</p>
+                        </div>
+
+                        <!-- Percentage: colour plus an icon, so it is not colour alone -->
+                        <th:block th:if="${result.totalMarks > 0}" th:with="percentage=${(result.scoreAchieved * 100.0) / result.totalMarks}">
+                            <span class="pct" th:classappend="${percentage >= 50 ? 'pass' : 'fail'}">
+                                <i class="bi" th:classappend="${percentage >= 50 ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}" aria-hidden="true"></i>
+                                <span th:text="${#numbers.formatDecimal(percentage, 1, 1) + '%'}">75.0%</span>
+                            </span>
+                        </th:block>
+                        <span th:if="${result.totalMarks == 0}" class="pct na">N/A</span>
+                    </div>
+
+                    <div class="result-meta">
+                        <span><i class="bi bi-award"></i>Score: <strong th:text="${result.scoreAchieved}">15</strong> / <span th:text="${result.totalMarks}">20</span></span>
+                        <span><i class="bi bi-clock"></i><span th:text="${#temporals.format(result.submissionTime, 'dd-MMM-yyyy HH:mm')}">25-Oct-2025 14:30</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="empty" th:if="${#lists.isEmpty(results)}">
+            <i class="bi bi-info-circle"></i>
+            <p class="mb-0 mt-2">No student has taken this exam yet.</p>
+        </div>
+
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

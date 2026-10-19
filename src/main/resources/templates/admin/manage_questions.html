@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage questions - Online Exam System</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --ink: #101828;
+            --muted: #475467;
+            --paper: #f3f5f9;
+            --surface: #ffffff;
+            --brand: #3b3fd8;
+            --brand-dark: #2b2fb0;
+            --bad: #b42318;
+            --line: #d9deea;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: var(--ink);
+            background: var(--paper);
+            min-height: 100vh;
+        }
+        h1 { font-weight: 800; letter-spacing: -0.02em; }
+        :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+        .page { padding: 1.5rem 0 2.5rem; }
+        .back-link a { color: var(--brand); font-weight: 600; text-decoration: none; display: inline-block; padding: .25rem 0; }
+        .back-link a:hover { text-decoration: underline; }
+
+        .page-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin: .5rem 0 1.25rem; }
+        .page-head h1 { font-size: clamp(1.4rem, 5vw, 1.9rem); margin: 0; overflow-wrap: anywhere; }
+
+        .btn-brand {
+            background: var(--brand); color: #fff; font-weight: 600;
+            padding: .7rem 1.2rem; border-radius: 10px; border: 0;
+        }
+        .btn-brand:hover { background: var(--brand-dark); color: #fff; }
+
+        .alert { border-radius: 10px; font-weight: 600; }
+
+        /* One card per question */
+        .q-card {
+            background: var(--surface); border: 2px solid var(--ink); border-radius: 14px;
+            padding: 1rem; height: 100%; display: flex; flex-direction: column;
+        }
+        .q-text { font-weight: 600; font-size: 1.05rem; margin: 0 0 .75rem; overflow-wrap: anywhere; }
+        .q-meta { display: flex; flex-wrap: wrap; gap: .25rem 1rem; color: var(--muted); font-weight: 600; margin-bottom: 1rem; }
+        .q-meta i { color: var(--brand); margin-right: .3rem; }
+
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: auto; }
+        .act {
+            display: flex; align-items: center; justify-content: center; gap: .4rem;
+            min-height: 44px; /* easy to tap */
+            border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface);
+            color: var(--ink); font-weight: 600; text-decoration: none; padding: .4rem .5rem;
+        }
+        .act:hover { border-color: var(--brand); color: var(--brand); }
+        .act i { color: var(--brand); }
+        .act-danger { color: var(--bad); border-color: #f0c4bf; }
+        .act-danger i { color: var(--bad); }
+        .act-danger:hover { background: #fdecea; border-color: var(--bad); color: var(--bad); }
+
+        .empty {
+            background: var(--surface); border: 2px dashed var(--line); border-radius: 14px;
+            padding: 2rem 1rem; text-align: center; color: var(--muted);
+        }
+
+        @media (min-width: 576px) {
+            .page { padding: 2.5rem 0 3rem; }
+            .q-card { padding: 1.25rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments :: navbar}"></div>
+
+<main class="page">
+    <div class="container">
+
+        <div class="back-link">
+            <a th:href="@{/admin/manage-exams}"><i class="bi bi-arrow-left me-1"></i>Back to exams</a>
+        </div>
+
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+            <strong>Error:</strong> <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show mt-3" role="status">
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="page-head">
+            <h1 th:text="|Questions: ${exam.title}|">Questions</h1>
+            <a th:href="@{/admin/exam/{id}/question/add(id=${exam.id})}" class="btn btn-brand">
+                <i class="bi bi-plus-circle-fill me-2"></i>Add question
+            </a>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-lg-6" th:each="q : ${questions}">
+                <div class="q-card">
+                    <p class="q-text" th:text="${q.text}">This is a sample question...</p>
+                    <div class="q-meta">
+                        <span><i class="bi bi-award"></i><span th:text="${q.marks}">5</span> marks</span>
+                        <span><i class="bi bi-check-circle"></i>Correct: option <span th:text="${q.correctAnswer}">1</span></span>
+                    </div>
+
+                    <div class="actions">
+                        <a th:href="@{/admin/question/edit/{id}(id=${q.id})}" class="act">
+                            <i class="bi bi-pencil-fill"></i>Edit
+                        </a>
+                        <a th:href="@{/admin/exam/{examId}/question/delete/{qId}(examId=${exam.id}, qId=${q.id})}"
+                           class="act act-danger"
+                           onclick="return confirm('Are you sure you want to delete this question?');">
+                            <i class="bi bi-trash-fill"></i>Delete
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="empty" th:if="${#lists.isEmpty(questions)}">
+            No questions yet. Tap "Add question" to create the first one.
+        </div>
+
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

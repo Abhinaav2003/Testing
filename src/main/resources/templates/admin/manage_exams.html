@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Manage exams - Online Exam System</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --ink: #101828;
+            --muted: #475467;
+            --paper: #f3f5f9;
+            --surface: #ffffff;
+            --brand: #3b3fd8;
+            --brand-dark: #2b2fb0;
+            --bad: #b42318;
+            --line: #d9deea;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: var(--ink);
+            background: var(--paper);
+            min-height: 100vh;
+        }
+        h1, h2 { font-weight: 800; letter-spacing: -0.02em; }
+        :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+        .page { padding: 1.5rem 0 2.5rem; }
+        .page-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; margin-bottom: 1.25rem; }
+        .page-head h1 { font-size: clamp(1.5rem, 5vw, 2rem); margin: 0; }
+
+        .btn-brand {
+            background: var(--brand); color: #fff; font-weight: 600;
+            padding: .7rem 1.2rem; border-radius: 10px; border: 0;
+        }
+        .btn-brand:hover { background: var(--brand-dark); color: #fff; }
+
+        /* One card per exam: easy to read and tap on a phone */
+        .exam-card {
+            background: var(--surface); border: 2px solid var(--ink); border-radius: 14px;
+            padding: 1rem; height: 100%; display: flex; flex-direction: column;
+        }
+        .exam-card h2 { font-size: 1.2rem; margin: 0 0 .35rem; overflow-wrap: anywhere; }
+        .exam-meta { display: flex; flex-wrap: wrap; gap: .25rem 1rem; color: var(--muted); font-weight: 600; margin-bottom: 1rem; }
+        .exam-meta i { color: var(--brand); margin-right: .3rem; }
+
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin-top: auto; }
+        .act {
+            display: flex; align-items: center; justify-content: center; gap: .4rem;
+            min-height: 44px; /* easy to tap */
+            border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface);
+            color: var(--ink); font-weight: 600; text-decoration: none; padding: .4rem .5rem;
+        }
+        .act:hover { border-color: var(--brand); color: var(--brand); }
+        .act i { color: var(--brand); }
+        .act-wide { grid-column: 1 / -1; }
+        .act-danger { color: var(--bad); border-color: #f0c4bf; }
+        .act-danger i { color: var(--bad); }
+        .act-danger:hover { background: #fdecea; border-color: var(--bad); color: var(--bad); }
+
+        .empty {
+            background: var(--surface); border: 2px dashed var(--line); border-radius: 14px;
+            padding: 2rem 1rem; text-align: center; color: var(--muted);
+        }
+
+        @media (min-width: 576px) {
+            .page { padding: 2.5rem 0 3rem; }
+            .exam-card { padding: 1.25rem; }
+        }
+        @media (min-width: 1200px) {
+            .actions { grid-template-columns: repeat(3, 1fr); }
+            .act-wide { grid-column: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments :: navbar}"></div>
+
+<main class="page">
+    <div class="container">
+
+        <div class="page-head">
+            <h1>Manage exams</h1>
+            <a th:href="@{/admin/exam/add}" class="btn btn-brand">
+                <i class="bi bi-plus-circle-fill me-2"></i>Create new exam
+            </a>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-lg-6" th:each="exam : ${exams}">
+                <div class="exam-card">
+                    <h2 th:text="${exam.title}">Sample exam title</h2>
+                    <div class="exam-meta">
+                        <span><i class="bi bi-stopwatch"></i><span th:text="${exam.durationInMinutes}">60</span> min</span>
+                        <span><i class="bi bi-question-circle"></i><span th:text="${#lists.size(exam.questions)}">10</span> questions</span>
+                    </div>
+
+                    <div class="actions">
+                        <a th:href="@{/admin/exam/{examId}/question/add(examId=${exam.id})}" class="act">
+                            <i class="bi bi-plus-lg"></i>Add questions
+                        </a>
+                        <a th:href="@{/admin/exam/manage-questions/{examId}(examId=${exam.id})}" class="act">
+                            <i class="bi bi-list-task"></i>Manage questions
+                        </a>
+                        <a th:href="@{/admin/results/{examId}(examId=${exam.id})}" class="act">
+                            <i class="bi bi-bar-chart-fill"></i>Results
+                        </a>
+                        <a th:href="@{/admin/exam/edit/{examId}(examId=${exam.id})}" class="act">
+                            <i class="bi bi-pencil-fill"></i>Edit
+                        </a>
+                        <a th:href="@{/admin/exam/delete/{examId}(examId=${exam.id})}" class="act act-danger act-wide"
+                           onclick="return confirm('Are you sure you want to delete this exam? This will delete all associated questions and results.');">
+                            <i class="bi bi-trash-fill"></i>Delete
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="empty" th:if="${#lists.isEmpty(exams)}">
+            No exams yet. Tap "Create new exam" to get started.
+        </div>
+
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My results - Online Exam System</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --ink: #101828;
+            --muted: #475467;
+            --paper: #f3f5f9;
+            --surface: #ffffff;
+            --brand: #3b3fd8;
+            --brand-dark: #2b2fb0;
+            --ok: #12805c;
+            --bad: #b42318;
+            --line: #d9deea;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: var(--ink);
+            background: var(--paper);
+            min-height: 100vh;
+        }
+        h1 { font-weight: 800; letter-spacing: -0.02em; }
+        :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+        .page { padding: 1.5rem 0 2.5rem; }
+        .page h1 { font-size: clamp(1.5rem, 5vw, 2rem); margin-bottom: .25rem; }
+        .page .sub { color: var(--muted); margin-bottom: 1.25rem; }
+
+        /* One card per attempt */
+        .result-card {
+            background: var(--surface); border: 2px solid var(--ink); border-radius: 14px;
+            padding: 1rem; height: 100%; display: flex; flex-direction: column; gap: .75rem;
+        }
+        .result-title { font-weight: 800; font-size: 1.15rem; margin: 0; overflow-wrap: anywhere; }
+        .result-date { color: var(--muted); margin: .15rem 0 0; }
+        .result-date i { color: var(--brand); margin-right: .3rem; }
+
+        .score-box { background: var(--paper); border-radius: 10px; padding: .8rem; text-align: center; }
+        .score-percent { display: inline-flex; align-items: center; gap: .4rem; font-size: 1.75rem; font-weight: 800; line-height: 1.1; }
+        .score-percent.pass { color: var(--ok); }
+        .score-percent.fail { color: var(--bad); }
+        .score-percent.na { color: var(--muted); }
+        .score-raw { color: var(--muted); font-weight: 600; }
+
+        .btn-brand {
+            background: var(--brand); color: #fff; font-weight: 600;
+            padding: .6rem 1.1rem; border-radius: 10px; border: 0; min-height: 48px;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .btn-brand:hover { background: var(--brand-dark); color: #fff; }
+        .btn-ghost {
+            font-weight: 600; padding: .5rem 1rem; border-radius: 10px; min-height: 48px;
+            border: 2px solid var(--ink); color: var(--ink); background: transparent;
+            display: inline-flex; align-items: center; justify-content: center;
+        }
+        .btn-ghost:hover { background: var(--ink); color: #fff; }
+
+        .empty {
+            background: var(--surface); border: 2px dashed var(--line); border-radius: 14px;
+            padding: 2rem 1rem; text-align: center; color: var(--muted);
+        }
+        .empty i { font-size: 2.5rem; }
+        .empty h2 { font-size: 1.25rem; font-weight: 800; color: var(--ink); margin: .5rem 0 .25rem; }
+
+        @media (min-width: 576px) {
+            .page { padding: 2.5rem 0 3rem; }
+            .result-card { padding: 1.25rem; }
+        }
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments :: navbar}"></div>
+
+<main class="page">
+    <div class="container">
+
+        <h1>My exam history</h1>
+        <p class="sub">Review your scores and past attempts here.</p>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-6 col-lg-4" th:each="result : ${pastResults}">
+                <div class="result-card">
+
+                    <div>
+                        <p class="result-title" th:text="${result.exam.title}">Java Basics</p>
+                        <p class="result-date">
+                            <i class="bi bi-calendar-check"></i>Taken on <span th:text="${#temporals.format(result.submissionTime, 'MMM dd, yyyy')}"></span>
+                        </p>
+                    </div>
+
+                    <div class="score-box">
+                        <th:block th:if="${result.totalMarks > 0}" th:with="percentage=${(result.scoreAchieved * 100.0) / result.totalMarks}">
+                            <!-- 70% or more is a pass: colour plus an icon -->
+                            <div class="score-percent" th:classappend="${percentage >= 70 ? 'pass' : 'fail'}">
+                                <i class="bi" th:classappend="${percentage >= 70 ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}" aria-hidden="true"></i>
+                                <span th:text="${#numbers.formatDecimal(percentage, 1, 1) + '%'}">75.0%</span>
+                            </div>
+                            <div class="score-raw" th:text="|Score: ${result.scoreAchieved} / ${result.totalMarks}|">Score: 15 / 20</div>
+                        </th:block>
+                        <div th:if="${result.totalMarks == 0}">
+                            <span class="score-percent na">N/A</span>
+                        </div>
+                    </div>
+
+                    <a th:href="@{/student/review/{id}(id=${result.id})}" class="btn btn-ghost mt-auto">
+                        <i class="bi bi-search me-2"></i>Review answers
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="empty" th:if="${#lists.isEmpty(pastResults)}">
+            <i class="bi bi-journal-x"></i>
+            <h2>No results yet</h2>
+            <p>You have not completed any exams yet.</p>
+            <a th:href="@{/student/dashboard}" class="btn btn-brand">
+                <i class="bi bi-pencil-square me-2"></i>Find an exam to take
+            </a>
+        </div>
+
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

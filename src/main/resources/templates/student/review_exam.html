@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="|Review: ${exam.title}|">Review exam</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --ink: #101828;
+            --muted: #475467;
+            --paper: #f3f5f9;
+            --surface: #ffffff;
+            --brand: #3b3fd8;
+            --brand-dark: #2b2fb0;
+            --ok: #12805c;
+            --bad: #b42318;
+            --line: #d9deea;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: var(--ink);
+            background: var(--paper);
+            min-height: 100vh;
+        }
+        h1 { font-weight: 800; letter-spacing: -0.02em; }
+        :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+        .page { padding: 1.5rem 0 2.5rem; }
+        .narrow { max-width: 760px; margin-inline: auto; }
+
+        .back-link a { color: var(--brand); font-weight: 600; text-decoration: none; display: inline-block; padding: .25rem 0; }
+        .back-link a:hover { text-decoration: underline; }
+
+        /* Summary */
+        .summary {
+            background: var(--surface); border: 2px solid var(--ink); border-radius: 14px;
+            padding: 1.25rem; margin: .5rem 0 1.25rem;
+            display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;
+        }
+        .summary h1 { font-size: clamp(1.4rem, 5vw, 1.9rem); margin: 0; overflow-wrap: anywhere; }
+        .summary .sub { color: var(--muted); margin: .15rem 0 0; }
+        .score-label { color: var(--muted); font-weight: 600; margin: 0; }
+        .score-value { font-size: 2.25rem; font-weight: 800; line-height: 1.1; display: inline-flex; align-items: center; gap: .4rem; }
+        .score-value.pass { color: var(--ok); }
+        .score-value.fail { color: var(--bad); }
+        .score-pct { color: var(--muted); font-weight: 600; }
+
+        /* Legend */
+        .legend { display: flex; flex-wrap: wrap; gap: .35rem 1.25rem; color: var(--muted); font-size: .9rem; margin-bottom: 1rem; }
+        .legend i.ok { color: var(--ok); }
+        .legend i.bad { color: var(--bad); }
+
+        /* Question */
+        .question-card {
+            background: var(--surface); border: 2px solid var(--ink); border-radius: 14px;
+            padding: 1.1rem; margin-bottom: 1rem;
+        }
+        .q-head { color: var(--muted); font-weight: 700; margin: 0 0 .4rem; }
+        .q-text { font-size: 1.1rem; font-weight: 700; margin: 0 0 1rem; overflow-wrap: anywhere; }
+
+        /* Options: colour plus an icon plus a text tag */
+        .review-option {
+            display: flex; align-items: flex-start; gap: .75rem;
+            padding: .75rem .9rem; margin-bottom: .6rem;
+            border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface);
+            overflow-wrap: anywhere;
+        }
+        .review-option:last-of-type { margin-bottom: 0; }
+        .review-option .opt-icon { flex: none; font-size: 1.15rem; line-height: 1.4; color: var(--muted); }
+        .review-option.correct { border-color: var(--ok); background: #e8f6f0; }
+        .review-option.correct .opt-icon { color: var(--ok); }
+        .review-option.wrong { border-color: var(--bad); background: #fdecea; }
+        .review-option.wrong .opt-icon { color: var(--bad); }
+        .tag { display: block; font-size: .875rem; font-weight: 800; margin-top: .15rem; }
+        .correct .tag { color: var(--ok); }
+        .wrong .tag { color: var(--bad); }
+
+        .unanswered {
+            color: var(--muted); font-style: italic; margin: .9rem 0 0;
+            display: flex; gap: .5rem; align-items: baseline;
+        }
+
+        .btn-brand {
+            background: var(--brand); color: #fff; font-weight: 600; border: 0; border-radius: 10px;
+            min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+            padding: .6rem 1.4rem;
+        }
+        .btn-brand:hover { background: var(--brand-dark); color: #fff; }
+
+        @media (min-width: 576px) {
+            .page { padding: 2.5rem 0 3rem; }
+            .question-card { padding: 1.5rem; }
+            .summary { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments :: navbar}"></div>
+
+<main class="page">
+    <div class="container narrow">
+
+        <div class="back-link">
+            <a th:href="@{/student/my-results}"><i class="bi bi-arrow-left me-1"></i>Back to results</a>
+        </div>
+
+        <!-- Summary -->
+        <div class="summary">
+            <div>
+                <h1 th:text="${exam.title}">Exam title</h1>
+                <p class="sub">Reviewing your results</p>
+            </div>
+            <div>
+                <p class="score-label">Your score</p>
+                <th:block th:if="${result.totalMarks > 0}" th:with="percentage=${(result.scoreAchieved * 100.0) / result.totalMarks}">
+                    <!-- 70% or more is a pass: colour plus an icon -->
+                    <div class="score-value" th:classappend="${percentage >= 70 ? 'pass' : 'fail'}">
+                        <i class="bi" th:classappend="${percentage >= 70 ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}" aria-hidden="true"></i>
+                        <span th:text="${result.scoreAchieved} + ' / ' + ${result.totalMarks}">15 / 20</span>
+                    </div>
+                    <div class="score-pct" th:text="${#numbers.formatDecimal(percentage, 1, 1) + '%'}">75.0%</div>
+                </th:block>
+                <div th:if="${result.totalMarks == 0}" class="score-value">N/A</div>
+            </div>
+        </div>
+
+        <p class="legend" aria-hidden="true">
+            <span><i class="bi bi-check-circle-fill ok"></i> Correct answer</span>
+            <span><i class="bi bi-x-circle-fill bad"></i> Your wrong answer</span>
+        </p>
+
+        <!-- Questions -->
+        <div th:each="question, iter : ${questions}" class="question-card">
+            <p class="q-head" th:text="|Question ${iter.count} (Marks: ${question.marks})|">Question 1</p>
+            <p class="q-text" th:text="${question.text}">Question text goes here...</p>
+
+            <!-- The student's answer for this question, from the map -->
+            <th:block th:with="studentOpt=${studentAnswers.get(question.id)}">
+
+                <div class="review-option"
+                     th:classappend="${question.correctAnswer == 1 ? 'correct' : (studentOpt == 1 ? 'wrong' : '')}">
+                    <i class="bi opt-icon" aria-hidden="true"
+                       th:classappend="${question.correctAnswer == 1 ? 'bi-check-circle-fill' : (studentOpt == 1 ? 'bi-x-circle-fill' : 'bi-circle')}"></i>
+                    <div>
+                        <span th:text="${question.option1}">Option 1</span>
+                        <span class="tag" th:if="${question.correctAnswer == 1 and studentOpt == 1}">Your answer (correct)</span>
+                        <span class="tag" th:if="${question.correctAnswer == 1 and studentOpt != 1}">Correct answer</span>
+                        <span class="tag" th:if="${question.correctAnswer != 1 and studentOpt == 1}">Your answer</span>
+                    </div>
+                </div>
+
+                <div class="review-option"
+                     th:classappend="${question.correctAnswer == 2 ? 'correct' : (studentOpt == 2 ? 'wrong' : '')}">
+                    <i class="bi opt-icon" aria-hidden="true"
+                       th:classappend="${question.correctAnswer == 2 ? 'bi-check-circle-fill' : (studentOpt == 2 ? 'bi-x-circle-fill' : 'bi-circle')}"></i>
+                    <div>
+                        <span th:text="${question.option2}">Option 2</span>
+                        <span class="tag" th:if="${question.correctAnswer == 2 and studentOpt == 2}">Your answer (correct)</span>
+                        <span class="tag" th:if="${question.correctAnswer == 2 and studentOpt != 2}">Correct answer</span>
+                        <span class="tag" th:if="${question.correctAnswer != 2 and studentOpt == 2}">Your answer</span>
+                    </div>
+                </div>
+
+                <div class="review-option"
+                     th:classappend="${question.correctAnswer == 3 ? 'correct' : (studentOpt == 3 ? 'wrong' : '')}">
+                    <i class="bi opt-icon" aria-hidden="true"
+                       th:classappend="${question.correctAnswer == 3 ? 'bi-check-circle-fill' : (studentOpt == 3 ? 'bi-x-circle-fill' : 'bi-circle')}"></i>
+                    <div>
+                        <span th:text="${question.option3}">Option 3</span>
+                        <span class="tag" th:if="${question.correctAnswer == 3 and studentOpt == 3}">Your answer (correct)</span>
+                        <span class="tag" th:if="${question.correctAnswer == 3 and studentOpt != 3}">Correct answer</span>
+                        <span class="tag" th:if="${question.correctAnswer != 3 and studentOpt == 3}">Your answer</span>
+                    </div>
+                </div>
+
+                <div class="review-option"
+                     th:classappend="${question.correctAnswer == 4 ? 'correct' : (studentOpt == 4 ? 'wrong' : '')}">
+                    <i class="bi opt-icon" aria-hidden="true"
+                       th:classappend="${question.correctAnswer == 4 ? 'bi-check-circle-fill' : (studentOpt == 4 ? 'bi-x-circle-fill' : 'bi-circle')}"></i>
+                    <div>
+                        <span th:text="${question.option4}">Option 4</span>
+                        <span class="tag" th:if="${question.correctAnswer == 4 and studentOpt == 4}">Your answer (correct)</span>
+                        <span class="tag" th:if="${question.correctAnswer == 4 and studentOpt != 4}">Correct answer</span>
+                        <span class="tag" th:if="${question.correctAnswer != 4 and studentOpt == 4}">Your answer</span>
+                    </div>
+                </div>
+
+                <!-- Unanswered -->
+                <p th:if="${studentOpt == 0 or studentOpt == null}" class="unanswered">
+                    <i class="bi bi-exclamation-circle"></i>You did not answer this question.
+                </p>
+
+            </th:block>
+        </div>
+
+        <div class="text-center mt-4">
+            <a th:href="@{/student/my-results}" class="btn btn-brand w-100">
+                <i class="bi bi-arrow-left-circle"></i>Back to results
+            </a>
+        </div>
+
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

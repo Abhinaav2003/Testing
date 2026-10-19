@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Exam submitted - Online Exam System</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        :root {
+            --ink: #101828;
+            --muted: #475467;
+            --paper: #f3f5f9;
+            --surface: #ffffff;
+            --brand: #3b3fd8;
+            --brand-dark: #2b2fb0;
+            --ok: #12805c;
+            --bad: #b42318;
+            --line: #d9deea;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            color: var(--ink);
+            background: var(--paper);
+            min-height: 100vh;
+        }
+        h1 { font-weight: 800; letter-spacing: -0.02em; }
+        :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+        .page { padding: 1.5rem 0 2.5rem; }
+
+        .result-card {
+            background: var(--surface); border: 2px solid var(--ink); border-radius: 14px;
+            padding: 1.5rem 1.25rem; max-width: 520px; margin-inline: auto; text-align: center;
+        }
+        .result-icon { font-size: 3.5rem; line-height: 1; }
+        .result-icon.pass { color: var(--ok); }
+        .result-icon.fail { color: var(--bad); }
+        .result-card h1 { font-size: clamp(1.5rem, 6vw, 2rem); margin: .75rem 0 .25rem; }
+        .result-card .lead { color: var(--muted); font-size: 1.05rem; margin: 0; }
+        .result-card hr { border-color: var(--line); opacity: 1; margin: 1.25rem 0; }
+
+        .score-label { color: var(--muted); font-weight: 600; margin: 0; }
+        .score-display { font-size: clamp(2.6rem, 12vw, 3.5rem); font-weight: 800; line-height: 1.1; }
+        .score-display.pass { color: var(--ok); }
+        .score-display.fail { color: var(--bad); }
+        .score-raw { color: var(--muted); font-size: 1.15rem; font-weight: 600; }
+        .pass-mark { color: var(--muted); font-size: .9rem; margin: .5rem 0 0; }
+
+        .progress { height: 14px; border-radius: 999px; background: var(--paper); margin-top: 1rem; }
+        .progress-bar.pass { background: var(--ok); }
+        .progress-bar.fail { background: var(--bad); }
+
+        .actions { display: flex; flex-direction: column; gap: .75rem; margin-top: 1.5rem; }
+        .btn-brand, .btn-ghost {
+            display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+            min-height: 52px; font-weight: 600; border-radius: 10px; font-size: 1rem;
+        }
+        .btn-brand { background: var(--brand); color: #fff; border: 0; }
+        .btn-brand:hover { background: var(--brand-dark); color: #fff; }
+        .btn-ghost { border: 2px solid var(--ink); color: var(--ink); background: transparent; }
+        .btn-ghost:hover { background: var(--ink); color: #fff; }
+
+        @media (min-width: 576px) {
+            .page { padding: 3rem 0; }
+            .result-card { padding: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div th:replace="~{fragments :: navbar}"></div>
+
+<main class="page">
+    <div class="container">
+
+        <!-- Percentage and pass status (50% is the pass mark) -->
+        <th:block th:with="percentage=${(total > 0) ? (score * 100.0) / total : 0}, isPass=${percentage >= 50}">
+
+            <div class="result-card">
+
+                <!-- Pass or fail: icon plus words, so it is not colour alone -->
+                <div th:if="${isPass}">
+                    <i class="bi bi-trophy-fill result-icon pass" aria-hidden="true"></i>
+                    <h1>Congratulations, you passed!</h1>
+                </div>
+                <div th:unless="${isPass}">
+                    <i class="bi bi-exclamation-triangle-fill result-icon fail" aria-hidden="true"></i>
+                    <h1>Better luck next time</h1>
+                </div>
+
+                <p class="lead">You have successfully submitted the exam.</p>
+
+                <hr>
+
+                <p class="score-label">Your score</p>
+                <div class="score-display" th:classappend="${isPass ? 'pass' : 'fail'}"
+                     th:text="|${#numbers.formatDecimal(percentage, 1, 1)}%|">75.0%</div>
+                <div class="score-raw" th:text="|${score} out of ${total} points|">15 out of 20 points</div>
+
+                <div class="progress" role="progressbar" aria-label="Your score"
+                     aria-valuemin="0" aria-valuemax="100"
+                     th:attr="aria-valuenow=${#numbers.formatDecimal(percentage, 1, 1, 'POINT')}">
+                    <div class="progress-bar" th:classappend="${isPass ? 'pass' : 'fail'}"
+                         th:style="|width: ${#numbers.formatDecimal(percentage, 1, 1, 'POINT')}%;|"></div>
+                </div>
+                <p class="pass-mark">Pass mark: 50%</p>
+
+                <div class="actions">
+                    <!-- 'resultId' is passed as a flash attribute from ExamController -->
+                    <a th:if="${resultId != null}" th:href="@{/student/review/{id}(id=${resultId})}" class="btn btn-brand">
+                        <i class="bi bi-search"></i>Review your answers
+                    </a>
+                    <a th:href="@{/student/dashboard}" class="btn btn-ghost">
+                        <i class="bi bi-house-door-fill"></i>Back to dashboard
+                    </a>
+                </div>
+            </div>
+
+        </th:block>
+    </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
