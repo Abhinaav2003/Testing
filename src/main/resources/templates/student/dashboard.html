@@ -14,8 +14,6 @@
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
     <style>
         :root {
             --ink: #101828;
@@ -217,18 +215,85 @@
             color: #fff;
         }
 
-        /* Bar chart */
+        /* Standard vertical bar graph */
 
-        .chart-box {
+        .plot {
+            --plot-h: 260px;
+            display: grid;
+            grid-template-columns: 2.6rem minmax(0, 1fr);
+            font-size: .85rem;
+            color: var(--ink);
+        }
+
+        .plot-y {
             position: relative;
-            height: 260px;
-            width: 100%;
+            height: var(--plot-h);
+        }
+
+        .plot-y span {
+            position: absolute;
+            right: 8px;
+            transform: translateY(50%);
+            line-height: 1;
+        }
+
+        .plot-y span::after {
+            content: "";
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            width: 5px;
+            border-top: 1px solid var(--ink);
+        }
+
+        .plot-scroll {
+            overflow-x: auto;
             min-width: 0;
         }
 
-        #scoreChart {
+        .plot-cols {
+            display: flex;
+            min-width: 100%;
+            width: max-content;
+        }
+
+        .plot-col {
+            flex: 1 0 64px;
+            min-width: 0;
+        }
+
+        .plot-area {
+            height: var(--plot-h);
+            display: flex;
+            align-items: flex-end;
+            padding: 0 12%;
+            border-top: 1px solid var(--ink);
+            border-bottom: 1px solid var(--ink);
+        }
+
+        .plot-col:first-child .plot-area {
+            border-left: 1px solid var(--ink);
+        }
+
+        .plot-col:last-child .plot-area {
+            border-right: 1px solid var(--ink);
+        }
+
+        .plot-bar {
             width: 100%;
-            height: 100%;
+            background: #1f77b4;
+        }
+
+        .plot-col:hover .plot-bar {
+            background: #155d8d;
+        }
+
+        .plot-label {
+            text-align: center;
+            padding: .5rem .25rem 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* Past results */
@@ -331,10 +396,6 @@
             .stat-label {
                 font-size: 1rem;
             }
-
-            .chart-box {
-                height: 310px;
-            }
         }
 
         @media (max-width: 575.98px) {
@@ -348,10 +409,6 @@
 
             .result-top {
                 flex-wrap: wrap;
-            }
-
-            .chart-box {
-                height: 260px;
             }
         }
 
@@ -515,14 +572,47 @@
                         Score history (%)
                     </h2>
 
-                    <div class="chart-box" id="chartBox">
+                    <div class="plot"
+                         th:unless="${#lists.isEmpty(pastResults)}">
 
-                        <canvas id="scoreChart"
-                                role="img"
-                                aria-label="Bar chart showing your exam scores over time">
-                        </canvas>
+                        <div class="plot-y" aria-hidden="true">
+                            <span style="bottom:100%">100</span>
+                            <span style="bottom:80%">80</span>
+                            <span style="bottom:60%">60</span>
+                            <span style="bottom:40%">40</span>
+                            <span style="bottom:20%">20</span>
+                            <span style="bottom:0">0</span>
+                        </div>
 
+                        <div class="plot-scroll">
+                            <div class="plot-cols">
+
+                                <div class="plot-col"
+                                     th:each="result : ${pastResults}"
+                                     th:with="pct=${result.totalMarks > 0 ? (result.scoreAchieved * 100.0) / result.totalMarks : 0}"
+                                     th:title="|${result.exam.title}: ${#numbers.formatDecimal(pct, 1, 1)}%|">
+
+                                    <div class="plot-area">
+                                        <div class="plot-bar"
+                                             th:style="|height:${#numbers.formatDecimal(pct, 1, 1, 'POINT')}%|"></div>
+                                    </div>
+
+                                    <div class="plot-label"
+                                         th:text="${result.exam.title}">
+                                        Java Basics
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
                     </div>
+
+                    <p class="empty"
+                       th:if="${#lists.isEmpty(pastResults)}">
+                        <i class="bi bi-bar-chart-line"></i>
+                        Your scores will appear here after your first exam.
+                    </p>
+
                 </div>
             </div>
 
@@ -611,135 +701,6 @@
 
 <!-- Bootstrap JavaScript -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Chart.js BAR GRAPH -->
-<script th:inline="javascript">
-    /*<![CDATA[*/
-
-    const chartLabels = /*[[${chartLabels}]]*/ [];
-    const chartData = /*[[${chartData}]]*/ [];
-
-    const chartCanvas = document.getElementById('scoreChart');
-    const chartBox = document.getElementById('chartBox');
-
-    if (chartLabels && chartLabels.length > 0) {
-
-        new Chart(chartCanvas.getContext('2d'), {
-            type: 'bar',
-
-            data: {
-                labels: chartLabels,
-
-                datasets: [{
-                    label: 'Score (%)',
-                    data: chartData,
-
-                    backgroundColor: 'rgba(59, 63, 216, 0.82)',
-                    hoverBackgroundColor: '#2b2fb0',
-                    borderColor: '#3b3fd8',
-                    borderWidth: 1,
-                    borderRadius: 6,
-                    borderSkipped: false,
-
-                    // Tighter spacing (raise toward 1.0 for even less gap)
-                    categoryPercentage: 0.95,
-                    barPercentage: 0.9,
-                    maxBarThickness: 80
-                }]
-            },
-
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-
-                    tooltip: {
-                        displayColors: false,
-
-                        callbacks: {
-                            title: function (items) {
-                                return items.length ? items[0].label : '';
-                            },
-
-                            label: function (context) {
-                                return 'Score: ' + context.parsed.y + '%';
-                            }
-                        }
-                    }
-                },
-
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        min: 0,
-                        max: 100,
-
-                        title: {
-                            display: true,
-                            text: 'Score (%)',
-                            font: {
-                                weight: 'bold'
-                            }
-                        },
-
-                        ticks: {
-                            stepSize: 20,
-
-                            callback: function (value) {
-                                return value + '%';
-                            }
-                        },
-
-                        grid: {
-                            color: 'rgba(71, 84, 103, 0.12)'
-                        }
-                    },
-
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Exams',
-                            font: {
-                                weight: 'bold'
-                            }
-                        },
-
-                        grid: {
-                            display: false
-                        },
-
-                        ticks: {
-                            autoSkip: true,
-                            maxRotation: 45,
-                            minRotation: 0
-                        }
-                    }
-                }
-            }
-        });
-
-    } else {
-
-        chartBox.style.height = 'auto';
-
-        chartBox.innerHTML =
-            '<p class="empty">' +
-                '<i class="bi bi-bar-chart-line"></i>' +
-                'Your scores will appear here after your first exam.' +
-            '</p>';
-    }
-
-    /*]]>*/
-</script>
 
 </body>
 </html>
