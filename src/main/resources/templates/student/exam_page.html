@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <title th:text="${exam.title}">Exam</title>
+    <title th:text="${exam.title}">Online Exam</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
           rel="stylesheet">
@@ -25,6 +25,9 @@
             --ok-dark: #0d6347;
             --bad: #b42318;
             --line: #d9deea;
+            --review: #d97706;
+            --review-bg: #fff0c2;
+            --review-answer: #7c3aed;
         }
 
         * {
@@ -44,7 +47,7 @@
             outline-offset: 2px;
         }
 
-        /* Exam timer bar */
+        /* Top exam bar */
 
         .exam-bar {
             position: sticky;
@@ -80,7 +83,7 @@
             line-height: 1;
         }
 
-        /* Student and exam details */
+        /* Student information */
 
         .info {
             background: var(--surface);
@@ -105,7 +108,6 @@
             object-fit: cover;
             border: 1px solid var(--line);
             background: var(--surface);
-            color: var(--muted);
         }
 
         .who-name {
@@ -148,7 +150,7 @@
 
         @media (min-width: 992px) {
             .exam-layout {
-                grid-template-columns: 1fr 320px;
+                grid-template-columns: minmax(0, 1fr) 320px;
                 align-items: start;
             }
 
@@ -223,40 +225,40 @@
         }
 
         .form-msg {
+            display: none;
             background: #fdecea;
             color: var(--bad);
             border-radius: 10px;
             font-weight: 600;
             padding: .7rem .9rem;
             margin-bottom: 1rem;
-            display: none;
         }
 
         .form-msg.show {
             display: block;
         }
 
-        /* Previous, Hold and Next */
+        /* Navigation buttons */
 
         .nav-row {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
-            gap: .75rem;
+            gap: .65rem;
             margin-top: 1rem;
         }
 
         .btn-brand,
         .btn-ghost,
-        .btn-hold,
+        .btn-review,
         .btn-submit {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: .5rem;
+            gap: .4rem;
             min-height: 48px;
             font-weight: 600;
             border-radius: 10px;
-            font-size: 1rem;
+            font-size: .95rem;
         }
 
         .btn-brand {
@@ -281,18 +283,18 @@
             color: #fff;
         }
 
-        .btn-hold {
-            background: #98a2b3;
+        .btn-review {
+            background: var(--review);
             color: #fff;
             border: 0;
         }
 
-        .btn-hold:hover {
-            background: #667085;
+        .btn-review:hover {
+            background: #b45309;
             color: #fff;
         }
 
-        .btn-hold.is-held {
+        .btn-review.is-reviewed {
             background: var(--ink);
             color: #fff;
         }
@@ -328,13 +330,13 @@
         .palette-count {
             color: var(--muted);
             font-weight: 600;
-            font-size: .95rem;
+            font-size: .85rem;
         }
 
         .palette-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
-            gap: .5rem;
+            grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+            gap: .55rem;
         }
 
         .q-palette-btn {
@@ -351,29 +353,49 @@
             filter: brightness(.95);
         }
 
+        /* Answered */
+
         .q-palette-btn.answered {
             background: var(--ok);
             border-color: var(--ok);
             color: #fff;
         }
 
-        .q-palette-btn.held {
-            background: #98a2b3;
-            border-color: #667085;
+        /* Reviewed but unanswered */
+
+        .q-palette-btn.review {
+            background: var(--review-bg);
+            border-color: var(--review);
+            color: #92400e;
+        }
+
+        /* Both answered and reviewed */
+
+        .q-palette-btn.answered.review {
+            background: var(--review-answer);
+            border-color: #6d28d9;
             color: #fff;
         }
 
+        /* Currently selected palette question */
+
         .q-palette-btn.active {
-            box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--brand);
+            outline: 3px solid var(--brand);
+            outline-offset: 2px;
         }
 
         .legend {
             color: var(--muted);
-            font-size: .85rem;
-            margin: .75rem 0 1rem;
+            font-size: .8rem;
+            margin: .85rem 0 1rem;
             display: flex;
             flex-wrap: wrap;
-            gap: .25rem .9rem;
+            gap: .5rem .8rem;
+        }
+
+        .legend span {
+            display: inline-flex;
+            align-items: center;
         }
 
         .legend i {
@@ -382,7 +404,7 @@
             height: .8rem;
             border-radius: 3px;
             margin-right: .3rem;
-            vertical-align: -1px;
+            flex: none;
         }
 
         .btn-submit {
@@ -470,20 +492,22 @@
             }
 
             .nav-row {
-                gap: .4rem;
+                gap: .35rem;
             }
 
             .btn-brand,
             .btn-ghost,
-            .btn-hold {
-                font-size: .85rem;
+            .btn-review {
+                font-size: .78rem;
                 min-height: 44px;
-                padding: .4rem;
+                padding: .35rem;
             }
         }
 
         @media (prefers-reduced-motion: reduce) {
-            * {
+            *,
+            *::before,
+            *::after {
                 transition: none !important;
                 animation: none !important;
                 scroll-behavior: auto !important;
@@ -494,7 +518,10 @@
 
 <body>
 
-<!-- TERMS AND CONDITIONS POPUP -->
+<!-- ==========================================
+     TERMS AND CONDITIONS
+========================================== -->
+
 <div class="modal fade"
      id="termsModal"
      tabindex="-1"
@@ -505,10 +532,10 @@
 
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content border-0 shadow-lg"
-             style="border-radius: 18px;">
+             style="border-radius:18px;">
 
             <div class="modal-header text-white"
-                 style="background: #3b3fd8; border-radius: 18px 18px 0 0;">
+                 style="background:#3b3fd8;border-radius:18px 18px 0 0;">
 
                 <div>
                     <h5 class="modal-title fw-bold" id="termsModalTitle">
@@ -517,7 +544,6 @@
                     </h5>
                     <small>Please read the instructions carefully.</small>
                 </div>
-
             </div>
 
             <div class="modal-body p-4">
@@ -535,60 +561,45 @@
                 <ol class="terms-list ps-3">
                     <li>
                         <strong>Time limit:</strong>
-                        The exam timer starts after you click
-                        <em>Start Exam</em>.
+                        The timer starts after you click Start Exam.
                     </li>
-
                     <li>
                         <strong>Automatic submission:</strong>
-                        When the allotted time expires, the system will
-                        automatically submit your exam.
+                        The exam is submitted automatically when the timer expires.
                     </li>
-
                     <li>
                         <strong>Answer selection:</strong>
-                        Select an option to record your answer. Unanswered
-                        questions may receive zero marks according to the
-                        exam marking rules.
+                        Select an option to record an answer. Unanswered
+                        questions may receive zero marks.
                     </li>
-
+                    <li>
+                        <strong>Mark for review:</strong>
+                        You can mark questions to revisit them before submitting.
+                        Marking for review does not select an answer.
+                    </li>
                     <li>
                         <strong>Answer changes:</strong>
-                        You may change your answers before submission,
-                        unless the exam rules specify otherwise.
+                        You may change answers before final submission.
                     </li>
-
-                    <li>
-                        <strong>Refresh and navigation:</strong>
-                        Avoid refreshing or closing the exam page. Your
-                        progress will only be recoverable if the system
-                        has been configured to save it.
-                    </li>
-
                     <li>
                         <strong>Fair conduct:</strong>
-                        Do not use unauthorized assistance or share exam
-                        questions or answers with other students.
+                        Do not use unauthorized assistance or share answers.
                     </li>
-
                     <li>
                         <strong>Final submission:</strong>
-                        Once submitted, your answers cannot be changed
-                        through this exam attempt.
+                        You cannot change answers through this attempt after submission.
                     </li>
-
                     <li>
                         <strong>Technical issues:</strong>
-                        Contact your exam administrator if a technical
-                        problem occurs during the exam.
+                        Contact your exam administrator if a technical problem occurs.
                     </li>
                 </ol>
 
                 <div class="submit-warning mb-3">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
                     <strong>Important:</strong>
-                    You cannot pause the timer by closing this popup
-                    or navigating away from the exam.
+                    Avoid refreshing or closing the exam page. Your progress
+                    may not be recoverable unless it is saved by the server.
                 </div>
 
                 <div class="form-check terms-check">
@@ -599,8 +610,7 @@
                     <label class="form-check-label fw-semibold"
                            for="agreeTerms">
                         I have read and agree to these Terms &amp; Conditions.
-                        I understand that the exam will be automatically
-                        submitted when the time expires.
+                        I understand the time limit and automatic submission.
                     </label>
                 </div>
 
@@ -609,14 +619,13 @@
                      role="alert">
                     Please agree to the Terms &amp; Conditions to continue.
                 </div>
-
             </div>
 
             <div class="modal-footer">
                 <button type="button"
                         id="startExamBtn"
                         class="btn btn-primary w-100 py-2"
-                        style="background:#3b3fd8; border-color:#3b3fd8;"
+                        style="background:#3b3fd8;border-color:#3b3fd8;"
                         disabled>
                     <i class="bi bi-play-circle-fill me-2"></i>
                     I Agree — Start Exam
@@ -627,7 +636,10 @@
     </div>
 </div>
 
-<!-- STICKY EXAM BAR -->
+<!-- ==========================================
+     STICKY EXAM BAR
+========================================== -->
+
 <div class="exam-bar">
     <div class="container">
         <span class="progress-text">
@@ -635,7 +647,7 @@
             <span th:text="${#lists.size(questions)}">20</span>
         </span>
 
-        <span class="timer-wrap" role="group" aria-label="Time left">
+        <span class="timer-wrap" aria-label="Time remaining">
             <i class="bi bi-stopwatch" aria-hidden="true"></i>
             <span id="timer" role="timer">--:--</span>
         </span>
@@ -645,6 +657,7 @@
 <main class="container">
 
     <!-- STUDENT AND EXAM DETAILS -->
+
     <div class="info">
         <div class="who">
 
@@ -670,19 +683,14 @@
             </svg>
 
             <div style="min-width:0;">
-                <p class="who-name"
-                   th:text="${student.fullName}">
+                <p class="who-name" th:text="${student.fullName}">
                     Student name
                 </p>
 
                 <p class="who-contact">
-                    <span th:text="${student.username}">
-                        student@example.com
-                    </span>
+                    <span th:text="${student.username}">Username</span>
                     &middot;
-                    <span th:text="${student.mobileNumber}">
-                        Mobile number
-                    </span>
+                    <span th:text="${student.mobileNumber}">Mobile</span>
                 </p>
             </div>
         </div>
@@ -707,7 +715,10 @@
         </div>
     </div>
 
-    <!-- EXAM FORM -->
+    <!-- ==========================================
+         EXAM FORM
+    =========================================== -->
+
     <form id="exam-form"
           th:action="@{/exam/submit}"
           method="post">
@@ -721,9 +732,13 @@
                id="termsAccepted"
                value="false">
 
+        <!-- Add your Spring Security CSRF hidden field here
+             if your application does not automatically add it. -->
+
         <div class="exam-layout">
 
             <!-- QUESTIONS -->
+
             <div>
                 <div class="form-msg"
                      id="formMsg"
@@ -736,11 +751,10 @@
 
                     <p class="q-head"
                        th:text="|Question ${iter.count} (Marks: ${question.marks})|">
-                        Question 1 (Marks: 1)
+                        Question 1
                     </p>
 
-                    <p class="q-text"
-                       th:text="${question.text}">
+                    <p class="q-text" th:text="${question.text}">
                         Question text
                     </p>
 
@@ -752,9 +766,7 @@
                                th:id="|q${question.id}_opt1|"
                                value="1">
 
-                        <span th:text="${question.option1}">
-                            Option 1
-                        </span>
+                        <span th:text="${question.option1}">Option 1</span>
                     </label>
 
                     <label class="option"
@@ -765,9 +777,7 @@
                                th:id="|q${question.id}_opt2|"
                                value="2">
 
-                        <span th:text="${question.option2}">
-                            Option 2
-                        </span>
+                        <span th:text="${question.option2}">Option 2</span>
                     </label>
 
                     <label class="option"
@@ -778,9 +788,7 @@
                                th:id="|q${question.id}_opt3|"
                                value="3">
 
-                        <span th:text="${question.option3}">
-                            Option 3
-                        </span>
+                        <span th:text="${question.option3}">Option 3</span>
                     </label>
 
                     <label class="option"
@@ -791,14 +799,14 @@
                                th:id="|q${question.id}_opt4|"
                                value="4">
 
-                        <span th:text="${question.option4}">
-                            Option 4
-                        </span>
+                        <span th:text="${question.option4}">Option 4</span>
                     </label>
                 </div>
 
-                <!-- QUESTION NAVIGATION -->
+                <!-- PREVIOUS / REVIEW / NEXT -->
+
                 <div class="nav-row">
+
                     <button type="button"
                             id="prev-btn"
                             class="btn btn-ghost">
@@ -807,10 +815,10 @@
                     </button>
 
                     <button type="button"
-                            id="hold-btn"
-                            class="btn btn-hold">
-                        <i class="bi bi-pause-circle"></i>
-                        <span id="hold-label">Hold</span>
+                            id="review-btn"
+                            class="btn btn-review">
+                        <i class="bi bi-bookmark"></i>
+                        <span id="review-label">Mark Review</span>
                     </button>
 
                     <button type="button"
@@ -819,11 +827,14 @@
                         Next
                         <i class="bi bi-arrow-right"></i>
                     </button>
+
                 </div>
             </div>
 
             <!-- QUESTION PALETTE -->
-            <div class="palette">
+
+            <aside class="palette">
+
                 <div class="palette-head">
                     <h2>Questions</h2>
 
@@ -835,15 +846,17 @@
                 </div>
 
                 <div class="palette-grid">
+
                     <button type="button"
                             th:each="q, iter : ${questions}"
                             class="q-palette-btn"
                             th:text="${iter.count}"
                             th:data-question-index="${iter.index}">
                     </button>
+
                 </div>
 
-                <p class="legend">
+                <div class="legend">
                     <span>
                         <i style="background:var(--ok)"></i>
                         Answered
@@ -855,35 +868,94 @@
                     </span>
 
                     <span>
-                        <i style="background:#98a2b3"></i>
-                        On hold
+                        <i style="background:var(--review-bg);border:1px solid var(--review)"></i>
+                        Marked for review
                     </span>
-                </p>
+
+                    <span>
+                        <i style="background:var(--review-answer)"></i>
+                        Answered + review
+                    </span>
+                </div>
 
                 <button type="submit"
                         id="submit-btn"
                         class="btn btn-submit">
                     <i class="bi bi-check-circle-fill"></i>
-                    Submit exam
+                    Submit Exam
                 </button>
-            </div>
 
+            </aside>
         </div>
     </form>
 </main>
 
-<!-- BOOTSTRAP JAVASCRIPT -->
+<!-- ==========================================
+     MANUAL SUBMISSION CONFIRMATION
+========================================== -->
+
+<div class="modal fade"
+     id="submitConfirmModal"
+     tabindex="-1"
+     aria-labelledby="submitConfirmTitle"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow"
+             style="border-radius:16px;">
+
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="submitConfirmTitle">
+                    <i class="bi bi-send-check me-2 text-success"></i>
+                    Submit your exam?
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-2">
+                    Are you sure you want to submit your exam?
+                </p>
+
+                <p class="text-secondary small mb-0">
+                    You will not be able to change your answers through
+                    this attempt after submission.
+                </p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    Continue Exam
+                </button>
+
+                <button type="button"
+                        class="btn btn-success"
+                        id="confirmSubmitBtn">
+                    Yes, Submit Exam
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- BOOTSTRAP JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- EXAM TIMER SCRIPT -->
+<!-- YOUR EXISTING TIMER SCRIPT -->
 <script th:src="@{/js/exam-timer.js}"></script>
 
 <script th:inline="javascript">
 document.addEventListener('DOMContentLoaded', function () {
 
-    /* -----------------------------------------
+    /* ==========================================
        TERMS AND CONDITIONS
-    ----------------------------------------- */
+    ========================================== */
 
     var termsModalElement = document.getElementById('termsModal');
     var termsModal = new bootstrap.Modal(termsModalElement);
@@ -897,10 +969,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var timerDisplay = document.getElementById('timer');
 
     var durationInMinutes = /*[[${exam.durationInMinutes}]]*/ 60;
+
     var examStarted = false;
     var submissionInProgress = false;
 
-    // Do not start the timer until the student agrees.
     termsModal.show();
 
     agreeTerms.addEventListener('change', function () {
@@ -923,7 +995,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         termsModal.hide();
 
-        // Start the existing timer only after consent.
         if (typeof startTimer === 'function') {
             startTimer(durationInMinutes, timerDisplay, examForm);
         } else {
@@ -933,25 +1004,26 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    /* -----------------------------------------
+    /* ==========================================
        QUESTION NAVIGATION
-    ----------------------------------------- */
+    ========================================== */
 
     var questions = document.querySelectorAll('.question-card');
     var paletteBtns = document.querySelectorAll('.q-palette-btn');
 
     var prevBtn = document.getElementById('prev-btn');
     var nextBtn = document.getElementById('next-btn');
-    var holdBtn = document.getElementById('hold-btn');
-    var holdLabel = document.getElementById('hold-label');
+    var reviewBtn = document.getElementById('review-btn');
+    var reviewLabel = document.getElementById('review-label');
 
     var currentNum = document.getElementById('currentNum');
     var answeredCount = document.getElementById('answeredCount');
     var formMsg = document.getElementById('formMsg');
 
-    var phone = window.matchMedia('(max-width: 991.98px)');
     var total = questions.length;
     var current = 0;
+
+    var phone = window.matchMedia('(max-width: 991.98px)');
 
     function paletteBtnFor(index) {
         return document.querySelector(
@@ -959,17 +1031,25 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     }
 
+    /* Show accurate state in screen readers */
+
     function paletteLabel(btn) {
         if (!btn) return;
 
-        var held = btn.classList.contains('held');
+        var reviewed = btn.classList.contains('review');
         var answered = btn.classList.contains('answered');
 
-        var status = held
-            ? 'on hold'
-            : answered
-                ? 'answered'
-                : 'not answered';
+        var status;
+
+        if (answered && reviewed) {
+            status = 'answered and marked for review';
+        } else if (reviewed) {
+            status = 'marked for review, unanswered';
+        } else if (answered) {
+            status = 'answered';
+        } else {
+            status = 'not answered';
+        }
 
         btn.setAttribute(
             'aria-label',
@@ -977,17 +1057,26 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     }
 
-    paletteBtns.forEach(function (btn) {
-        paletteLabel(btn);
-    });
-
-    function refreshHoldButton() {
+    function refreshReviewButton() {
         var btn = paletteBtnFor(current);
-        var held = btn && btn.classList.contains('held');
+        var reviewed = btn && btn.classList.contains('review');
 
-        holdLabel.textContent = held ? 'Unhold' : 'Hold';
-        holdBtn.classList.toggle('is-held', !!held);
+        reviewLabel.textContent = reviewed
+            ? 'Remove Review'
+            : 'Mark Review';
+
+        reviewBtn.classList.toggle('is-reviewed', !!reviewed);
+
+        var icon = reviewBtn.querySelector('i');
+
+        if (icon) {
+            icon.className = reviewed
+                ? 'bi bi-bookmark-check-fill'
+                : 'bi bi-bookmark';
+        }
     }
+
+    /* Display one question at a time */
 
     function showQuestion(index, shouldScroll) {
         if (index < 0 || index >= total) return;
@@ -1021,7 +1110,8 @@ document.addEventListener('DOMContentLoaded', function () {
         nextBtn.disabled = current === total - 1;
 
         formMsg.classList.remove('show');
-        refreshHoldButton();
+
+        refreshReviewButton();
 
         if (shouldScroll && phone.matches && card) {
             card.scrollIntoView({
@@ -1048,35 +1138,38 @@ document.addEventListener('DOMContentLoaded', function () {
 
             showQuestion(index, true);
         });
+
+        paletteLabel(btn);
     });
 
-    /* -----------------------------------------
-       HOLD AND UNHOLD
-    ----------------------------------------- */
+    /* ==========================================
+       MARK FOR REVIEW
+    ========================================== */
 
-    holdBtn.addEventListener('click', function () {
+    reviewBtn.addEventListener('click', function () {
         var btn = paletteBtnFor(current);
 
         if (!btn) return;
 
-        btn.classList.toggle('held');
-        paletteLabel(btn);
-        refreshHoldButton();
+        // Toggle review status only.
+        // This does NOT select an answer.
+        // This does NOT move to another question.
+        btn.classList.toggle('review');
 
-        if (btn.classList.contains('held') && current < total - 1) {
-            showQuestion(current + 1, true);
-        }
+        paletteLabel(btn);
+        refreshReviewButton();
     });
 
-    /* -----------------------------------------
+    /* ==========================================
        ANSWERED STATE
-    ----------------------------------------- */
+    ========================================== */
 
     function markAnswered(radio) {
         var card = radio.closest('.question-card');
 
         if (!card) return;
 
+        // Update visual selection on this question only.
         card.querySelectorAll('.option').forEach(function (option) {
             var input = option.querySelector('input[type="radio"]');
 
@@ -1094,19 +1187,19 @@ document.addEventListener('DOMContentLoaded', function () {
         var btn = paletteBtnFor(index);
 
         if (btn) {
+            // Set answered state without removing review status.
             btn.classList.add('answered');
-            btn.classList.remove('held');
             paletteLabel(btn);
         }
 
         answeredCount.textContent =
             document.querySelectorAll('.q-palette-btn.answered').length;
-
-        formMsg.classList.remove('show');
-        refreshHoldButton();
     }
 
-    document.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+    document.querySelectorAll(
+        '.question-card input[type="radio"]'
+    ).forEach(function (radio) {
+
         radio.addEventListener('change', function () {
             markAnswered(radio);
         });
@@ -1116,15 +1209,22 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    /* -----------------------------------------
-       SUBMISSION CONFIRMATION
-    ----------------------------------------- */
+    /* ==========================================
+       SUBMISSION
+    ========================================== */
 
     var submitBtn = document.getElementById('submit-btn');
+    var confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
+
+    var confirmModalElement =
+        document.getElementById('submitConfirmModal');
+
+    var confirmModal =
+        bootstrap.Modal.getOrCreateInstance(confirmModalElement);
 
     examForm.addEventListener('submit', function (event) {
 
-        // Never allow submission before the terms have been accepted.
+        // Require agreement before submission.
         if (!examStarted || termsAccepted.value !== 'true') {
             event.preventDefault();
             termsModal.show();
@@ -1132,119 +1232,58 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // Avoid duplicate submissions.
+        // Prevent duplicate submissions.
         if (submissionInProgress) {
             event.preventDefault();
             return;
         }
 
-        // The timer's automatic submission uses requestSubmit() or
-        // submit(). The timer should be adapted to bypass this confirmation
-        // for expiry-triggered submissions.
-        if (!examForm.dataset.autoSubmit && !examForm.dataset.confirmed) {
+        // Manual submission requires confirmation.
+        // Timer-triggered submission can set data-auto-submit="true".
+        if (!examForm.dataset.autoSubmit &&
+            !examForm.dataset.confirmed) {
+
             event.preventDefault();
-
-            var confirmModalElement =
-                document.getElementById('submitConfirmModal');
-
-            var confirmModal =
-                bootstrap.Modal.getOrCreateInstance(confirmModalElement);
-
             confirmModal.show();
             return;
         }
 
         submissionInProgress = true;
         submitBtn.disabled = true;
+
         submitBtn.innerHTML =
             '<span class="spinner-border spinner-border-sm me-2"></span>' +
             'Submitting...';
     });
 
-    /* -----------------------------------------
-       INITIALIZE
-    ----------------------------------------- */
+    confirmSubmitBtn.addEventListener('click', function () {
+        if (!examStarted || termsAccepted.value !== 'true') {
+            return;
+        }
+
+        examForm.dataset.confirmed = 'true';
+        confirmModal.hide();
+
+        // Triggers the submit listener above.
+        examForm.requestSubmit();
+    });
+
+    /* ==========================================
+       INITIALIZATION
+    ========================================== */
 
     if (total > 0) {
         showQuestion(0, false);
     } else {
-        formMsg.textContent = 'No questions are available for this exam.';
+        formMsg.textContent =
+            'No questions are available for this exam.';
+
         formMsg.classList.add('show');
         submitBtn.disabled = true;
+        reviewBtn.disabled = true;
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
     }
-
-    // Exam is not submitted if a student clicks outside the terms modal:
-    // the backdrop and Escape key are disabled.
-});
-</script>
-
-<!-- MANUAL SUBMISSION CONFIRMATION -->
-<div class="modal fade"
-     id="submitConfirmModal"
-     tabindex="-1"
-     aria-labelledby="submitConfirmTitle"
-     aria-hidden="true">
-
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow"
-             style="border-radius:16px;">
-
-            <div class="modal-header">
-                <h5 class="modal-title fw-bold" id="submitConfirmTitle">
-                    <i class="bi bi-send-check me-2 text-success"></i>
-                    Submit your exam?
-                </h5>
-
-                <button type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-            </div>
-
-            <div class="modal-body">
-                <p class="mb-2">
-                    Are you sure you want to submit your exam?
-                </p>
-
-                <p class="text-secondary small mb-0">
-                    After submission, you will not be able to change
-                    your answers in this attempt.
-                </p>
-            </div>
-
-            <div class="modal-footer">
-                <button type="button"
-                        class="btn btn-outline-secondary"
-                        data-bs-dismiss="modal">
-                    Continue Exam
-                </button>
-
-                <button type="button"
-                        class="btn btn-success"
-                        id="confirmSubmitBtn">
-                    Yes, Submit Exam
-                </button>
-            </div>
-
-        </div>
-    </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    var examForm = document.getElementById('exam-form');
-    var confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
-    var confirmModalElement = document.getElementById('submitConfirmModal');
-
-    confirmSubmitBtn.addEventListener('click', function () {
-        examForm.dataset.confirmed = 'true';
-
-        var modal = bootstrap.Modal.getOrCreateInstance(confirmModalElement);
-        modal.hide();
-
-        // requestSubmit triggers form validation and the submit event.
-        examForm.requestSubmit();
-    });
 });
 </script>
 
