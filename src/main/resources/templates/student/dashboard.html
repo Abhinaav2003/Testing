@@ -624,6 +624,11 @@
 
     if (chartLabels && chartLabels.length > 0) {
 
+        // Reserve a minimum number of slots so a few bars stay a
+        // sensible width and sit flush against the left edge.
+        const MIN_SLOTS = 8;
+        const slots = Math.max(chartLabels.length, MIN_SLOTS);
+
         new Chart(chartCanvas.getContext('2d'), {
             type: 'bar',
 
@@ -636,11 +641,14 @@
 
                     backgroundColor: 'rgba(59, 63, 216, 0.82)',
                     hoverBackgroundColor: '#2b2fb0',
-                    borderColor: '#3b3fd8',
+                    borderColor: '#ffffff',   // thin white line separates touching bars
                     borderWidth: 1,
-                    borderRadius: 7,
+                    borderRadius: 0,          // square corners look cleaner when bars touch
                     borderSkipped: false,
-                    maxBarThickness: 48
+
+                    // No spacing between bars
+                    categoryPercentage: 1.0,
+                    barPercentage: 1.0
                 }]
             },
 
@@ -701,6 +709,11 @@
                     },
 
                     x: {
+                        // Index-based range: bars start at the left,
+                        // remaining slots stay empty on the right.
+                        min: -0.5,
+                        max: slots - 0.5,
+
                         title: {
                             display: true,
                             text: 'Exams',
