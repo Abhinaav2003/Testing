@@ -223,7 +223,6 @@
             position: relative;
             height: 260px;
             width: 100%;
-            max-width: 480px;   /* decrease/increase to change chart width */
             min-width: 0;
         }
 
@@ -625,11 +624,6 @@
 
     if (chartLabels && chartLabels.length > 0) {
 
-        // Reserve a minimum number of slots so a few bars stay a
-        // sensible width and sit flush against the left edge.
-        const MIN_SLOTS = 8;
-        const slots = Math.max(chartLabels.length, MIN_SLOTS);
-
         new Chart(chartCanvas.getContext('2d'), {
             type: 'bar',
 
@@ -711,11 +705,6 @@
                     },
 
                     x: {
-                        // Index-based range: bars start at the left,
-                        // remaining slots stay empty on the right.
-                        min: -0.5,
-                        max: slots - 0.5,
-
                         title: {
                             display: true,
                             text: 'Exams',
