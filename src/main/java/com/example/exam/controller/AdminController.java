@@ -5,6 +5,7 @@ import com.example.exam.model.ExamAnswer;
 import com.example.exam.model.ExamResult;
 import com.example.exam.model.Question;
 import com.example.exam.model.User;
+
 import com.example.exam.repository.ExamAnswerRepository;
 import com.example.exam.repository.ExamRepository;
 import com.example.exam.repository.ExamResultRepository;
@@ -21,7 +22,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Controller
@@ -46,28 +46,42 @@ public class AdminController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    // ==================== ADMIN DASHBOARD ====================
+
     @GetMapping("/dashboard")
     public String adminDashboard(Model model) {
 
-        model.addAttribute("totalStudents",
+        model.addAttribute(
+                "totalStudents",
                 userRepository.countByRole("ROLE_STUDENT"));
 
-        model.addAttribute("totalExams", examRepository.count());
-        model.addAttribute("totalQuestions", questionRepository.count());
-        model.addAttribute("totalSubmissions", examResultRepository.count());
+        model.addAttribute(
+                "totalExams",
+                examRepository.count());
+
+        model.addAttribute(
+                "totalQuestions",
+                questionRepository.count());
+
+        model.addAttribute(
+                "totalSubmissions",
+                examResultRepository.count());
 
         List<Exam> allExams = examRepository.findAll();
 
-        model.addAttribute("chartLabels",
+        model.addAttribute(
+                "chartLabels",
                 allExams.stream()
                         .map(Exam::getTitle)
                         .collect(Collectors.toList()));
 
-        model.addAttribute("chartData",
+        model.addAttribute(
+                "chartData",
                 allExams.stream()
                         .map(exam -> exam.getResults().size())
                         .collect(Collectors.toList()));
 
+        // Latest five submissions first
         List<ExamResult> recentResults =
                 examResultRepository.findTop5ByOrderBySubmissionTimeDesc();
 
@@ -76,33 +90,44 @@ public class AdminController {
         return "admin/dashboard";
     }
 
+    // ==================== MANAGE EXAMS ====================
+
     @GetMapping("/manage-exams")
     public String getManageExamsPage(Model model) {
+
         model.addAttribute("exams", examRepository.findAll());
+
         return "admin/manage_exams";
     }
 
     @GetMapping("/exam/add")
     public String showAddExamForm(Model model) {
+
         model.addAttribute("exam", new Exam());
+
         return "admin/add_exam";
     }
 
     @PostMapping("/exam/add")
-    public String addExam(@ModelAttribute Exam exam,
-                          RedirectAttributes redirectAttributes) {
+    public String addExam(
+            @ModelAttribute Exam exam,
+            RedirectAttributes redirectAttributes) {
 
         examRepository.save(exam);
 
         redirectAttributes.addFlashAttribute(
-                "successMessage", "Exam added successfully.");
+                "successMessage",
+                "Exam added successfully.");
 
         return "redirect:/admin/manage-exams";
     }
 
+    // ==================== ADD QUESTIONS ====================
+
     @GetMapping("/exam/{examId}/question/add")
-    public String showAddQuestionForm(@PathVariable Long examId,
-                                      Model model) {
+    public String showAddQuestionForm(
+            @PathVariable Long examId,
+            Model model) {
 
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() ->
@@ -119,9 +144,10 @@ public class AdminController {
     }
 
     @PostMapping("/exam/question/add")
-    public String addQuestion(@ModelAttribute Question question,
-                              @RequestParam Long examId,
-                              RedirectAttributes redirectAttributes) {
+    public String addQuestion(
+            @ModelAttribute Question question,
+            @RequestParam Long examId,
+            RedirectAttributes redirectAttributes) {
 
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() ->
@@ -132,20 +158,28 @@ public class AdminController {
         questionRepository.save(question);
 
         redirectAttributes.addFlashAttribute(
-                "successMessage", "Question added successfully!");
+                "successMessage",
+                "Question added successfully!");
 
         return "redirect:/admin/exam/" + examId + "/question/add";
     }
 
+    // ==================== EXAM RESULTS ====================
+
     @GetMapping("/results/{examId}")
-    public String viewResults(@PathVariable Long examId, Model model) {
+    public String viewResults(
+            @PathVariable Long examId,
+            Model model) {
 
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() ->
                         new IllegalArgumentException(
                                 "Invalid exam ID: " + examId));
 
-        List<ExamResult> results = examResultRepository.findByExam(exam);
+        // Sort by submission timestamp: newest first
+        List<ExamResult> results =
+                examResultRepository
+                        .findByExamOrderBySubmissionTimeDesc(exam);
 
         model.addAttribute("exam", exam);
         model.addAttribute("results", results);
@@ -153,15 +187,13 @@ public class AdminController {
         return "admin/view_results";
     }
 
-    /*
-     * Delete an exam and all its dependent data.
-     * Everything runs in one transaction so a failed
-     * deletion can be rolled back.
-     */
+    // ==================== DELETE EXAM ====================
+
     @PostMapping("/exam/delete/{examId}")
     @Transactional
-    public String deleteExam(@PathVariable Long examId,
-                             RedirectAttributes redirectAttributes) {
+    public String deleteExam(
+            @PathVariable Long examId,
+            RedirectAttributes redirectAttributes) {
 
         try {
             Exam exam = examRepository.findById(examId)
@@ -169,7 +201,7 @@ public class AdminController {
                             new IllegalArgumentException(
                                     "Exam not found: " + examId));
 
-            // 1. Delete answers linked to results for this exam.
+            // 1. Delete answers belonging to this exam's results
             List<ExamResult> results =
                     examResultRepository.findByExam(exam);
 
@@ -179,29 +211,32 @@ public class AdminController {
 
             examAnswerRepository.flush();
 
-            // 2. Delete results linked to this exam.
+            // 2. Delete the exam results
             examResultRepository.deleteAll(results);
             examResultRepository.flush();
 
-            // 3. Delete questions linked to this exam.
+            // 3. Delete the exam questions
             List<Question> questions = exam.getQuestions();
 
             questionRepository.deleteAll(questions);
             questionRepository.flush();
 
-            // 4. Delete the exam after its dependent records.
+            // 4. Delete the exam
             examRepository.delete(exam);
             examRepository.flush();
 
             redirectAttributes.addFlashAttribute(
                     "successMessage",
-                    "Exam and its associated questions, answers, and results deleted successfully.");
+                    "Exam and its associated questions, answers, "
+                            + "and results deleted successfully.");
 
         } catch (DataIntegrityViolationException e) {
 
             redirectAttributes.addFlashAttribute(
                     "errorMessage",
-                    "Cannot delete this exam because related database records still exist. Check the foreign-key relationships and server logs.");
+                    "Cannot delete this exam because related database "
+                            + "records still exist. Check the foreign-key "
+                            + "relationships and server logs.");
 
             throw e;
 
@@ -217,9 +252,12 @@ public class AdminController {
         return "redirect:/admin/manage-exams";
     }
 
+    // ==================== EDIT EXAM ====================
+
     @GetMapping("/exam/edit/{examId}")
-    public String showEditExamForm(@PathVariable Long examId,
-                                   Model model) {
+    public String showEditExamForm(
+            @PathVariable Long examId,
+            Model model) {
 
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() ->
@@ -232,8 +270,9 @@ public class AdminController {
     }
 
     @PostMapping("/exam/update/{examId}")
-    public String updateExam(@PathVariable Long examId,
-                             @ModelAttribute Exam updatedExam) {
+    public String updateExam(
+            @PathVariable Long examId,
+            @ModelAttribute Exam updatedExam) {
 
         Exam existingExam = examRepository.findById(examId)
                 .orElseThrow(() ->
@@ -241,6 +280,7 @@ public class AdminController {
                                 "Invalid exam ID: " + examId));
 
         existingExam.setTitle(updatedExam.getTitle());
+
         existingExam.setDurationInMinutes(
                 updatedExam.getDurationInMinutes());
 
@@ -249,9 +289,12 @@ public class AdminController {
         return "redirect:/admin/manage-exams";
     }
 
+    // ==================== MANAGE QUESTIONS ====================
+
     @GetMapping("/exam/manage-questions/{examId}")
-    public String showManageQuestionsPage(@PathVariable Long examId,
-                                          Model model) {
+    public String showManageQuestionsPage(
+            @PathVariable Long examId,
+            Model model) {
 
         Exam exam = examRepository.findById(examId)
                 .orElseThrow(() ->
@@ -265,8 +308,9 @@ public class AdminController {
     }
 
     @GetMapping("/question/edit/{questionId}")
-    public String showEditQuestionForm(@PathVariable Long questionId,
-                                       Model model) {
+    public String showEditQuestionForm(
+            @PathVariable Long questionId,
+            Model model) {
 
         Question question = questionRepository.findById(questionId)
                 .orElseThrow(() ->
@@ -279,21 +323,25 @@ public class AdminController {
     }
 
     @PostMapping("/question/update/{questionId}")
-    public String updateQuestion(@PathVariable Long questionId,
-                                 @ModelAttribute Question updatedQuestion) {
+    public String updateQuestion(
+            @PathVariable Long questionId,
+            @ModelAttribute Question updatedQuestion) {
 
-        Question existingQuestion = questionRepository.findById(questionId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Invalid question ID: " + questionId));
+        Question existingQuestion =
+                questionRepository.findById(questionId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException(
+                                        "Invalid question ID: " + questionId));
 
         existingQuestion.setText(updatedQuestion.getText());
         existingQuestion.setOption1(updatedQuestion.getOption1());
         existingQuestion.setOption2(updatedQuestion.getOption2());
         existingQuestion.setOption3(updatedQuestion.getOption3());
         existingQuestion.setOption4(updatedQuestion.getOption4());
+
         existingQuestion.setCorrectAnswer(
                 updatedQuestion.getCorrectAnswer());
+
         existingQuestion.setMarks(updatedQuestion.getMarks());
 
         questionRepository.save(existingQuestion);
@@ -304,15 +352,18 @@ public class AdminController {
 
     @GetMapping("/exam/{examId}/question/delete/{questionId}")
     @Transactional
-    public String deleteQuestion(@PathVariable Long examId,
-                                 @PathVariable Long questionId,
-                                 RedirectAttributes redirectAttributes) {
+    public String deleteQuestion(
+            @PathVariable Long examId,
+            @PathVariable Long questionId,
+            RedirectAttributes redirectAttributes) {
 
         try {
-            Question question = questionRepository.findById(questionId)
-                    .orElseThrow(() ->
-                            new IllegalArgumentException(
-                                    "Question not found: " + questionId));
+            Question question =
+                    questionRepository.findById(questionId)
+                            .orElseThrow(() ->
+                                    new IllegalArgumentException(
+                                            "Question not found: "
+                                                    + questionId));
 
             if (question.getExam() == null
                     || !question.getExam().getId().equals(examId)) {
@@ -321,38 +372,43 @@ public class AdminController {
                         "errorMessage",
                         "The question does not belong to this exam.");
 
-                return "redirect:/admin/exam/manage-questions/" + examId;
+                return "redirect:/admin/exam/manage-questions/"
+                        + examId;
             }
 
-            // Do not delete a question if saved answers reference it.
-            // This protects the historical student results.
+            // Protect historical student answers
             boolean hasAnswers =
                     examAnswerRepository.existsByQuestion(question);
 
             if (hasAnswers) {
                 redirectAttributes.addFlashAttribute(
                         "errorMessage",
-                        "Cannot delete this question because student answers reference it.");
+                        "Cannot delete this question because student "
+                                + "answers reference it.");
 
-                return "redirect:/admin/exam/manage-questions/" + examId;
+                return "redirect:/admin/exam/manage-questions/"
+                        + examId;
             }
 
             questionRepository.delete(question);
             questionRepository.flush();
 
             redirectAttributes.addFlashAttribute(
-                    "successMessage", "Question deleted successfully.");
+                    "successMessage",
+                    "Question deleted successfully.");
 
         } catch (DataIntegrityViolationException e) {
 
             redirectAttributes.addFlashAttribute(
                     "errorMessage",
-                    "Cannot delete this question because related records exist.");
-
+                    "Cannot delete this question because related "
+                            + "records exist.");
         }
 
         return "redirect:/admin/exam/manage-questions/" + examId;
     }
+
+    // ==================== MANAGE STUDENTS ====================
 
     @GetMapping("/students")
     public String getManageStudentsPage(Model model) {
@@ -367,8 +423,9 @@ public class AdminController {
 
     @GetMapping("/student/delete/{id}")
     @Transactional
-    public String deleteStudent(@PathVariable Long id,
-                                RedirectAttributes redirectAttributes) {
+    public String deleteStudent(
+            @PathVariable Long id,
+            RedirectAttributes redirectAttributes) {
 
         try {
             User student = userRepository.findById(id)
@@ -384,7 +441,8 @@ public class AdminController {
 
             redirectAttributes.addFlashAttribute(
                     "successMessage",
-                    "Student account and associated results deleted successfully.");
+                    "Student account and associated results "
+                            + "deleted successfully.");
 
         } catch (Exception e) {
 
@@ -398,6 +456,8 @@ public class AdminController {
         return "redirect:/admin/students";
     }
 
+    // ==================== RESET STUDENT PASSWORD ====================
+
     @PostMapping("/student/reset-password")
     public String resetStudentPassword(
             @RequestParam("userId") Long userId,
@@ -405,8 +465,10 @@ public class AdminController {
             RedirectAttributes redirectAttributes) {
 
         if (newPassword == null || newPassword.trim().isEmpty()) {
+
             redirectAttributes.addFlashAttribute(
-                    "errorMessage", "Password cannot be empty.");
+                    "errorMessage",
+                    "Password cannot be empty.");
 
             return "redirect:/admin/students";
         }
@@ -417,7 +479,9 @@ public class AdminController {
                             new IllegalArgumentException(
                                     "Invalid student ID: " + userId));
 
-            student.setPassword(passwordEncoder.encode(newPassword));
+            student.setPassword(
+                    passwordEncoder.encode(newPassword));
+
             userRepository.save(student);
 
             redirectAttributes.addFlashAttribute(

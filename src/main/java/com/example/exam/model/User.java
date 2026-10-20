@@ -3,11 +3,12 @@ package com.example.exam.model;
 import jakarta.persistence.*;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Objects; // Import for equals/hashCode
+import java.util.Objects;
 
 @Entity
 @Table(name = "users")
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -18,53 +19,28 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-
-
-    // We can use the 'username' field for email, or add a separate one.
-
-
-    @Column(nullable = true) // Mobile number can be optional
+    @Column(nullable = true)
     private String mobileNumber;
 
     @Column(nullable = true)
     private String fullName;
 
-    @Column(nullable = true) // Profile pic URL is optional
-    private String profilePicUrl;
-
+    // Stores the selected predefined avatar path.
+    @Column(nullable = true)
+    private String profilePicUrl = "/images/avatars/avatar1.png";
 
     @Column(nullable = false)
     private String role;
 
-    @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(
+        mappedBy = "student",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true,
+        fetch = FetchType.LAZY
+    )
     private List<ExamResult> results = new ArrayList<>();
 
-    // --- Manual Getters and Setters ---
-
-
-    public String getFullName() {
-        return fullName;
-    }
-
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
-    }
-
-    public String getMobileNumber() {
-        return mobileNumber;
-    }
-
-    public void setMobileNumber(String mobileNumber) {
-        this.mobileNumber = mobileNumber;
-    }
-
-    public String getProfilePicUrl() {
-        return profilePicUrl;
-    }
-
-    public void setProfilePicUrl(String profilePicUrl) {
-        this.profilePicUrl = profilePicUrl;
-    }
+    // Getters and setters
 
     public Long getId() {
         return id;
@@ -90,6 +66,29 @@ public class User {
         this.password = password;
     }
 
+    public String getMobileNumber() {
+        return mobileNumber;
+    }
+
+    public void setMobileNumber(String mobileNumber) {
+        this.mobileNumber = mobileNumber;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    public String getProfilePicUrl() {
+        return profilePicUrl;
+    }
+
+    public void setProfilePicUrl(String profilePicUrl) {
+        this.profilePicUrl = profilePicUrl;
+    }
 
     public String getRole() {
         return role;
@@ -107,12 +106,16 @@ public class User {
         this.results = results;
     }
 
-
-
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
         User user = (User) o;
         return Objects.equals(id, user.id);
     }

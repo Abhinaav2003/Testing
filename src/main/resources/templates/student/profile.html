@@ -48,8 +48,7 @@
             margin-bottom: .75rem;
         }
         .pic-card .name { font-weight: 800; font-size: 1.25rem; margin: 0; overflow-wrap: anywhere; }
-        .pic-card .email { color: var(--muted); margin: .15rem 0 1.25rem; overflow-wrap: anywhere; }
-        .pic-card form { text-align: left; }
+        .pic-card .email { color: var(--muted); margin: .15rem 0 0; overflow-wrap: anywhere; }
 
         .form-label { font-weight: 600; }
         .form-text { color: var(--muted); }
@@ -111,16 +110,6 @@
 
                     <p class="name" th:text="${student.fullName}">Student name</p>
                     <p class="email" th:text="${student.username}">student@email.com</p>
-
-                    <form th:action="@{/student/profile/update-picture}" method="post" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label for="profilePicFile" class="form-label">Change picture</label>
-                            <input type="file" class="form-control" id="profilePicFile" name="profilePicFile"
-                                   accept="image/png, image/jpeg" required aria-describedby="picHelp">
-                            <div id="picHelp" class="form-text">PNG or JPG.</div>
-                        </div>
-                        <button type="submit" class="btn btn-brand w-100">Upload new picture</button>
-                    </form>
                 </div>
             </div>
 

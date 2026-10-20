@@ -93,9 +93,9 @@
         }
         .form-msg.show { display: block; }
 
-        /* Previous / Next */
-        .nav-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; margin-top: 1rem; }
-        .btn-brand, .btn-ghost, .btn-submit {
+        /* Previous / Hold / Next */
+        .nav-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .75rem; margin-top: 1rem; }
+        .btn-brand, .btn-ghost, .btn-hold, .btn-submit {
             display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
             min-height: 52px; font-weight: 600; border-radius: 10px; font-size: 1rem;
         }
@@ -103,6 +103,9 @@
         .btn-brand:hover { background: var(--brand-dark); color: #fff; }
         .btn-ghost { border: 2px solid var(--ink); color: var(--ink); background: transparent; }
         .btn-ghost:hover { background: var(--ink); color: #fff; }
+        .btn-hold { background: #98a2b3; color: #fff; border: 0; }
+        .btn-hold:hover { background: #667085; color: #fff; }
+        .btn-hold.is-held { background: var(--ink); color: #fff; }
         .nav-row button:disabled { opacity: .45; cursor: not-allowed; }
 
         /* Palette */
@@ -113,14 +116,19 @@
         .palette-head h2 { font-size: 1.1rem; font-weight: 800; margin: 0; }
         .palette-count { color: var(--muted); font-weight: 600; font-size: .95rem; }
         .palette-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: .5rem; }
+
+        /* Palette colours: red = not attempted, green = answered, grey = on hold */
         .q-palette-btn {
-            height: 44px; border: 1.5px solid var(--line); border-radius: 10px;
-            background: var(--paper); color: var(--ink); font-weight: 700; cursor: pointer;
+            height: 44px; border: 1.5px solid var(--bad); border-radius: 10px;
+            background: #fdecea; color: var(--bad); font-weight: 700; cursor: pointer;
         }
-        .q-palette-btn:hover { border-color: var(--brand); }
+        .q-palette-btn:hover { filter: brightness(.95); }
         .q-palette-btn.answered { background: var(--ok); border-color: var(--ok); color: #fff; }
+        .q-palette-btn.held { background: #98a2b3; border-color: #667085; color: #fff; } /* must stay after .answered */
         .q-palette-btn.active { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--brand); } /* ring marks the current question */
-        .legend { color: var(--muted); font-size: .85rem; margin: .75rem 0 1rem; }
+
+        .legend { color: var(--muted); font-size: .85rem; margin: .75rem 0 1rem; display: flex; flex-wrap: wrap; gap: .25rem .9rem; }
+        .legend i { display: inline-block; width: .8rem; height: .8rem; border-radius: 3px; margin-right: .3rem; vertical-align: -1px; }
 
         .btn-submit { width: 100%; background: var(--ok); color: #fff; border: 0; }
         .btn-submit:hover { background: var(--ok-dark); color: #fff; }
@@ -209,6 +217,9 @@
                     <button type="button" id="prev-btn" class="btn btn-ghost">
                         <i class="bi bi-arrow-left"></i>Previous
                     </button>
+                    <button type="button" id="hold-btn" class="btn btn-hold">
+                        <i class="bi bi-pause-circle"></i><span id="hold-label">Hold</span>
+                    </button>
                     <button type="button" id="next-btn" class="btn btn-brand">
                         Next<i class="bi bi-arrow-right"></i>
                     </button>
@@ -229,7 +240,11 @@
                             th:data-question-index="${iter.index}">
                     </button>
                 </div>
-                <p class="legend">Green: answered. Ring: current question.</p>
+                <p class="legend">
+                    <span><i style="background:var(--ok)"></i>Answered</span>
+                    <span><i style="background:#fdecea;border:1px solid var(--bad)"></i>Not attempted</span>
+                    <span><i style="background:#98a2b3"></i>On hold</span>
+                </p>
 
                 <button type="submit" id="submit-btn" class="btn btn-submit">
                     <i class="bi bi-check-circle-fill"></i>Submit exam
@@ -249,11 +264,13 @@
         var examForm = document.getElementById('exam-form');
         startTimer(durationInMinutes, timerDisplay, examForm);
 
-        // --- Pagination ---
+        // --- Elements ---
         var questions = document.querySelectorAll('.question-card');
         var paletteBtns = document.querySelectorAll('.q-palette-btn');
         var prevBtn = document.getElementById('prev-btn');
         var nextBtn = document.getElementById('next-btn');
+        var holdBtn = document.getElementById('hold-btn');
+        var holdLabel = document.getElementById('hold-label');
         var currentNum = document.getElementById('currentNum');
         var answeredCount = document.getElementById('answeredCount');
         var formMsg = document.getElementById('formMsg');
@@ -262,6 +279,26 @@
         var total = questions.length;
         var current = 0;
 
+        function paletteBtnFor(index) {
+            return document.querySelector('.q-palette-btn[data-question-index="' + index + '"]');
+        }
+
+        function paletteLabel(btn, answered) {
+            var held = btn.classList.contains('held');
+            btn.setAttribute('aria-label', 'Question ' + btn.textContent.trim() +
+                (held ? ', on hold' : (answered ? ', answered' : ', not answered')));
+        }
+        paletteBtns.forEach(function (b) { paletteLabel(b, false); });
+
+        // --- Hold button state for the current question ---
+        function refreshHoldButton() {
+            var btn = paletteBtnFor(current);
+            var held = btn && btn.classList.contains('held');
+            holdLabel.textContent = held ? 'Unhold' : 'Hold';
+            holdBtn.classList.toggle('is-held', !!held);
+        }
+
+        // --- Pagination ---
         function showQuestion(index, scroll) {
             if (index < 0 || index >= total) return;
             questions.forEach(function (q) { q.classList.remove('active'); });
@@ -271,13 +308,14 @@
                 b.classList.remove('active');
                 b.removeAttribute('aria-current');
             });
-            var btn = document.querySelector('.q-palette-btn[data-question-index="' + index + '"]');
+            var btn = paletteBtnFor(index);
             if (btn) { btn.classList.add('active'); btn.setAttribute('aria-current', 'true'); }
             current = index;
             currentNum.textContent = index + 1;
             prevBtn.disabled = (current === 0);
             nextBtn.disabled = (current === total - 1);
             formMsg.classList.remove('show');
+            refreshHoldButton();
             // On phones, bring the new question to the top of the screen
             if (scroll && phone.matches && card) card.scrollIntoView({ block: 'start' });
         }
@@ -290,23 +328,32 @@
             });
         });
 
-        // --- Answered state (palette, highlighted option, counter) ---
-        function paletteLabel(btn, answered) {
-            btn.setAttribute('aria-label', 'Question ' + btn.textContent.trim() + (answered ? ', answered' : ', not answered'));
-        }
-        paletteBtns.forEach(function (b) { paletteLabel(b, false); });
+        // --- Hold / Unhold ---
+        holdBtn.addEventListener('click', function () {
+            var btn = paletteBtnFor(current);
+            if (!btn) return;
+            btn.classList.toggle('held');
+            paletteLabel(btn, btn.classList.contains('answered'));
+            refreshHoldButton();
+            // After putting a question on hold, move on to the next one
+            if (btn.classList.contains('held') && current < total - 1) showQuestion(current + 1, true);
+        });
 
+        // --- Answered state (palette, highlighted option, counter) ---
         function markAnswered(radio) {
-            // highlight the chosen option inside this question
             var card = radio.closest('.question-card');
             card.querySelectorAll('.option').forEach(function (o) {
                 o.classList.toggle('selected', o.contains(radio) && radio.checked);
             });
-            var index = card.getAttribute('data-question-index');
-            var btn = document.querySelector('.q-palette-btn[data-question-index="' + index + '"]');
-            if (btn) { btn.classList.add('answered'); paletteLabel(btn, true); }
+            var btn = paletteBtnFor(card.getAttribute('data-question-index'));
+            if (btn) {
+                btn.classList.add('answered');
+                btn.classList.remove('held');   // answering a question releases the hold
+                paletteLabel(btn, true);
+            }
             answeredCount.textContent = document.querySelectorAll('.q-palette-btn.answered').length;
             formMsg.classList.remove('show');
+            refreshHoldButton();
         }
 
         var radios = document.querySelectorAll('input[type="radio"]');

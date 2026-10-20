@@ -1,10 +1,11 @@
 package com.example.exam.controller;
 
 import com.example.exam.model.User;
-import com.example.exam.service.FileStorageService;
 import com.example.exam.service.UserService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,8 +14,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.security.core.GrantedAuthority;
+
+import java.util.Set;
 
 @Controller
 public class AuthController {
@@ -22,34 +23,37 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
-    @Autowired
-    private FileStorageService fileStorageService;
+    private static final Set<String> ALLOWED_AVATARS = Set.of(
+        "avatar1.png",
+        "avatar2.png",
+        "avatar3.png",
+        "avatar4.png"
+    );
 
     @GetMapping("/")
     public String home() {
-        // Get the current user's authentication details
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        if (authentication != null && authentication.isAuthenticated()
-                && !(authentication.getPrincipal() instanceof String && authentication.getPrincipal().equals("anonymousUser"))) {
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
 
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getPrincipal())) {
 
-            boolean isAdmin = authentication.getAuthorities().stream()
+            boolean isAdmin = authentication.getAuthorities()
+                    .stream()
                     .map(GrantedAuthority::getAuthority)
                     .anyMatch("ROLE_ADMIN"::equals);
 
             if (isAdmin) {
-                // If ADMIN, redirect to admin dashboard
                 return "redirect:/admin/dashboard";
-            } else {
-                // If STUDENT, redirect to student dashboard
-                return "redirect:/student/dashboard";
             }
+
+            return "redirect:/student/dashboard";
         }
 
         return "index";
     }
-
 
     @GetMapping("/login")
     public String loginForm() {
@@ -66,33 +70,47 @@ public class AuthController {
     public String registerStudent(
             @ModelAttribute("user") User user,
             BindingResult bindingResult,
-            @RequestParam("profilePicFile") MultipartFile profilePicFile, // Gets the file
+            @RequestParam(name = "avatar", required = false)
+            String avatar,
             Model model) {
 
-        // Check if user (email) already exists
-        if (userService.findByUsername(user.getUsername()) != null) {
-            bindingResult.rejectValue("username", "error.user", "An account already exists with that email.");
+        // Check for an existing account.
+        if (user.getUsername() != null
+                && !user.getUsername().isBlank()
+                && userService.findByUsername(user.getUsername()) != null) {
+
+            bindingResult.rejectValue(
+                "username",
+                "error.user",
+                "An account already exists with that email."
+            );
         }
 
-        if (bindingResult.hasErrors()) {
+        // Validate the selected predefined avatar.
+        if (avatar == null || !ALLOWED_AVATARS.contains(avatar)) {
+            model.addAttribute(
+                "avatarError",
+                "Please select one of the four available avatars."
+            );
+        }
+
+        if (bindingResult.hasErrors()
+                || avatar == null
+                || !ALLOWED_AVATARS.contains(avatar)) {
+
             model.addAttribute("user", user);
             return "register";
         }
 
-        if (!profilePicFile.isEmpty()) {
-            try {
+        // Store only the image path, not the image itself.
+        user.setProfilePicUrl("/images/avatars/" + avatar);
 
-                String filePath = fileStorageService.saveFile(profilePicFile);
-                user.setProfilePicUrl(filePath); // Save the path to the user
-            } catch (Exception e) {
-                // Handle file save error
-                model.addAttribute("user", user);
-                model.addAttribute("fileError", "Could not save profile picture. Please try again.");
-                return "register";
-            }
-        }
+        // New registrations must be students.
+        user.setRole("ROLE_STUDENT");
 
+        // Save using the existing service.
         userService.saveStudent(user);
+
         return "redirect:/register?success";
     }
 }

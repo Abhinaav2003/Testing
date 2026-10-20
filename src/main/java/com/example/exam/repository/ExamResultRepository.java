@@ -16,6 +16,9 @@ public interface ExamResultRepository
     // Find results for a particular exam
     List<ExamResult> findByExam(Exam exam);
 
+    // Find results for a particular exam, newest submission first
+    List<ExamResult> findByExamOrderBySubmissionTimeDesc(Exam exam);
+
     // Find the five most recent results
     List<ExamResult> findTop5ByOrderBySubmissionTimeDesc();
 
