@@ -1,12 +1,17 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title th:text="${exam.title}">Exam</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+          rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <style>
         :root {
@@ -22,129 +27,614 @@
             --line: #d9deea;
         }
 
+        * {
+            box-sizing: border-box;
+        }
+
         body {
+            margin: 0;
             font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
             color: var(--ink);
             background: var(--paper);
             min-height: 100vh;
         }
-        :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+        :focus-visible {
+            outline: 3px solid var(--brand);
+            outline-offset: 2px;
+        }
+
+        /* Exam timer bar */
+
+        .exam-bar {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: var(--ink);
+            color: #fff;
+            padding: .7rem 0;
+        }
+
+        .exam-bar .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .progress-text {
+            font-weight: 600;
+        }
+
+        .timer-wrap {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            font-weight: 600;
+        }
+
+        #timer {
+            font-size: 1.5rem;
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            line-height: 1;
+        }
 
         /* Student and exam details */
+
         .info {
-            background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
-            padding: .9rem 1rem; margin: 1rem 0;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: .9rem 1rem;
+            margin: 1rem 0;
         }
-        .who { display: flex; align-items: center; gap: .75rem; min-width: 0; }
+
+        .who {
+            display: flex;
+            align-items: center;
+            gap: .75rem;
+            min-width: 0;
+        }
+
         .avatar {
-            flex: none; width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
-            border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+            flex: none;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--line);
+            background: var(--surface);
+            color: var(--muted);
         }
-        .who-name { font-weight: 800; margin: 0; overflow-wrap: anywhere; }
-        .who-contact { color: var(--muted); font-size: .9rem; margin: 0; overflow-wrap: anywhere; }
+
+        .who-name {
+            font-weight: 800;
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .who-contact {
+            color: var(--muted);
+            font-size: .9rem;
+            margin: 0;
+            overflow-wrap: anywhere;
+        }
+
         .exam-facts {
-            display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; margin-top: .75rem; padding-top: .75rem;
-            border-top: 1px solid var(--line); font-size: .95rem; color: var(--muted); font-weight: 600;
+            display: flex;
+            flex-wrap: wrap;
+            gap: .25rem 1.25rem;
+            margin-top: .75rem;
+            padding-top: .75rem;
+            border-top: 1px solid var(--line);
+            font-size: .95rem;
+            color: var(--muted);
+            font-weight: 600;
         }
-        .exam-facts strong { color: var(--ink); }
 
-        /* Sticky bar: always shows the question number and the time left */
-        .exam-bar {
-            position: sticky; top: 0; z-index: 20;
-            background: var(--ink); color: #fff;
-            padding: .6rem 0;
+        .exam-facts strong {
+            color: var(--ink);
         }
-        .exam-bar .container { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-        .exam-bar .progress-text { font-weight: 600; }
-        .timer-wrap { display: flex; align-items: center; gap: .5rem; font-weight: 600; }
-        #timer { font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; }
 
-        /* Layout: single column on phones, question plus palette from desktop up */
-        .exam-layout { display: grid; grid-template-columns: 1fr; gap: 1rem; padding-bottom: 2.5rem; }
+        /* Main layout */
+
+        .exam-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            padding-bottom: 2.5rem;
+        }
+
         @media (min-width: 992px) {
-            .exam-layout { grid-template-columns: 1fr 320px; align-items: start; }
-            .palette { position: sticky; top: 76px; }
+            .exam-layout {
+                grid-template-columns: 1fr 320px;
+                align-items: start;
+            }
+
+            .palette {
+                position: sticky;
+                top: 76px;
+            }
         }
 
-        /* Question */
+        /* Questions */
+
         .question-card {
-            display: none; background: var(--surface); border: 2px solid var(--ink); border-radius: 14px;
-            padding: 1.1rem; scroll-margin-top: 76px;
+            display: none;
+            background: var(--surface);
+            border: 2px solid var(--ink);
+            border-radius: 14px;
+            padding: 1.1rem;
+            scroll-margin-top: 76px;
         }
-        .question-card.active { display: block; }
-        .q-head { color: var(--muted); font-weight: 700; margin: 0 0 .5rem; }
-        .q-text { font-size: 1.15rem; font-weight: 700; margin: 0 0 1.1rem; overflow-wrap: anywhere; }
 
-        /* Whole row is tappable */
-        .option {
-            display: flex; align-items: center; gap: .8rem; width: 100%;
-            min-height: 52px; padding: .7rem .9rem; margin-bottom: .6rem;
-            border: 1.5px solid var(--line); border-radius: 10px; background: var(--surface);
-            cursor: pointer; overflow-wrap: anywhere;
+        .question-card.active {
+            display: block;
         }
-        .option:hover { border-color: var(--brand); }
-        .option input { flex: none; width: 1.25rem; height: 1.25rem; margin: 0; accent-color: var(--brand); }
-        .option.selected { border-color: var(--brand); background: #eef0ff; }
-        .option:last-child { margin-bottom: 0; }
+
+        .q-head {
+            color: var(--muted);
+            font-weight: 700;
+            margin: 0 0 .5rem;
+        }
+
+        .q-text {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 0 0 1.1rem;
+            overflow-wrap: anywhere;
+        }
+
+        .option {
+            display: flex;
+            align-items: center;
+            gap: .8rem;
+            width: 100%;
+            min-height: 52px;
+            padding: .7rem .9rem;
+            margin-bottom: .6rem;
+            border: 1.5px solid var(--line);
+            border-radius: 10px;
+            background: var(--surface);
+            cursor: pointer;
+            overflow-wrap: anywhere;
+        }
+
+        .option:hover {
+            border-color: var(--brand);
+        }
+
+        .option input {
+            flex: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            margin: 0;
+            accent-color: var(--brand);
+        }
+
+        .option.selected {
+            border-color: var(--brand);
+            background: #eef0ff;
+        }
+
+        .option:last-child {
+            margin-bottom: 0;
+        }
 
         .form-msg {
-            background: #fdecea; color: var(--bad); border-radius: 10px; font-weight: 600;
-            padding: .7rem .9rem; margin-bottom: 1rem; display: none;
+            background: #fdecea;
+            color: var(--bad);
+            border-radius: 10px;
+            font-weight: 600;
+            padding: .7rem .9rem;
+            margin-bottom: 1rem;
+            display: none;
         }
-        .form-msg.show { display: block; }
 
-        /* Previous / Hold / Next */
-        .nav-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .75rem; margin-top: 1rem; }
-        .btn-brand, .btn-ghost, .btn-hold, .btn-submit {
-            display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-            min-height: 52px; font-weight: 600; border-radius: 10px; font-size: 1rem;
+        .form-msg.show {
+            display: block;
         }
-        .btn-brand { background: var(--brand); color: #fff; border: 0; }
-        .btn-brand:hover { background: var(--brand-dark); color: #fff; }
-        .btn-ghost { border: 2px solid var(--ink); color: var(--ink); background: transparent; }
-        .btn-ghost:hover { background: var(--ink); color: #fff; }
-        .btn-hold { background: #98a2b3; color: #fff; border: 0; }
-        .btn-hold:hover { background: #667085; color: #fff; }
-        .btn-hold.is-held { background: var(--ink); color: #fff; }
-        .nav-row button:disabled { opacity: .45; cursor: not-allowed; }
 
-        /* Palette */
+        /* Previous, Hold and Next */
+
+        .nav-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: .75rem;
+            margin-top: 1rem;
+        }
+
+        .btn-brand,
+        .btn-ghost,
+        .btn-hold,
+        .btn-submit {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .5rem;
+            min-height: 48px;
+            font-weight: 600;
+            border-radius: 10px;
+            font-size: 1rem;
+        }
+
+        .btn-brand {
+            background: var(--brand);
+            color: #fff;
+            border: 0;
+        }
+
+        .btn-brand:hover {
+            background: var(--brand-dark);
+            color: #fff;
+        }
+
+        .btn-ghost {
+            border: 2px solid var(--ink);
+            color: var(--ink);
+            background: transparent;
+        }
+
+        .btn-ghost:hover {
+            background: var(--ink);
+            color: #fff;
+        }
+
+        .btn-hold {
+            background: #98a2b3;
+            color: #fff;
+            border: 0;
+        }
+
+        .btn-hold:hover {
+            background: #667085;
+            color: #fff;
+        }
+
+        .btn-hold.is-held {
+            background: var(--ink);
+            color: #fff;
+        }
+
+        .nav-row button:disabled {
+            opacity: .45;
+            cursor: not-allowed;
+        }
+
+        /* Question palette */
+
         .palette {
-            background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1rem;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 1rem;
         }
-        .palette-head { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; margin-bottom: .75rem; }
-        .palette-head h2 { font-size: 1.1rem; font-weight: 800; margin: 0; }
-        .palette-count { color: var(--muted); font-weight: 600; font-size: .95rem; }
-        .palette-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); gap: .5rem; }
 
-        /* Palette colours: red = not attempted, green = answered, grey = on hold */
+        .palette-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: .5rem;
+            margin-bottom: .75rem;
+        }
+
+        .palette-head h2 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .palette-count {
+            color: var(--muted);
+            font-weight: 600;
+            font-size: .95rem;
+        }
+
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+            gap: .5rem;
+        }
+
         .q-palette-btn {
-            height: 44px; border: 1.5px solid var(--bad); border-radius: 10px;
-            background: #fdecea; color: var(--bad); font-weight: 700; cursor: pointer;
+            height: 44px;
+            border: 1.5px solid var(--bad);
+            border-radius: 10px;
+            background: #fdecea;
+            color: var(--bad);
+            font-weight: 700;
+            cursor: pointer;
         }
-        .q-palette-btn:hover { filter: brightness(.95); }
-        .q-palette-btn.answered { background: var(--ok); border-color: var(--ok); color: #fff; }
-        .q-palette-btn.held { background: #98a2b3; border-color: #667085; color: #fff; } /* must stay after .answered */
-        .q-palette-btn.active { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--brand); } /* ring marks the current question */
 
-        .legend { color: var(--muted); font-size: .85rem; margin: .75rem 0 1rem; display: flex; flex-wrap: wrap; gap: .25rem .9rem; }
-        .legend i { display: inline-block; width: .8rem; height: .8rem; border-radius: 3px; margin-right: .3rem; vertical-align: -1px; }
+        .q-palette-btn:hover {
+            filter: brightness(.95);
+        }
 
-        .btn-submit { width: 100%; background: var(--ok); color: #fff; border: 0; }
-        .btn-submit:hover { background: var(--ok-dark); color: #fff; }
+        .q-palette-btn.answered {
+            background: var(--ok);
+            border-color: var(--ok);
+            color: #fff;
+        }
+
+        .q-palette-btn.held {
+            background: #98a2b3;
+            border-color: #667085;
+            color: #fff;
+        }
+
+        .q-palette-btn.active {
+            box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--brand);
+        }
+
+        .legend {
+            color: var(--muted);
+            font-size: .85rem;
+            margin: .75rem 0 1rem;
+            display: flex;
+            flex-wrap: wrap;
+            gap: .25rem .9rem;
+        }
+
+        .legend i {
+            display: inline-block;
+            width: .8rem;
+            height: .8rem;
+            border-radius: 3px;
+            margin-right: .3rem;
+            vertical-align: -1px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: var(--ok);
+            color: #fff;
+            border: 0;
+        }
+
+        .btn-submit:hover {
+            background: var(--ok-dark);
+            color: #fff;
+        }
+
+        /* Terms modal */
+
+        .terms-icon {
+            width: 54px;
+            height: 54px;
+            display: grid;
+            place-items: center;
+            border-radius: 15px;
+            background: #eeeeff;
+            color: var(--brand);
+            font-size: 1.7rem;
+            margin-bottom: 1rem;
+        }
+
+        .terms-list li {
+            margin-bottom: .75rem;
+            line-height: 1.55;
+        }
+
+        .terms-check {
+            background: #f5f6ff;
+            border: 1px solid #dfe0ff;
+            border-radius: 12px;
+            padding: 1rem 1rem 1rem 2.5rem;
+        }
+
+        #startExamBtn:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .submit-warning {
+            background: #fff8e6;
+            color: #854d0e;
+            border: 1px solid #fde68a;
+            padding: .9rem;
+            border-radius: 10px;
+            font-size: .9rem;
+        }
 
         @media (min-width: 576px) {
-            .question-card { padding: 1.5rem; }
+            .question-card {
+                padding: 1.5rem;
+            }
         }
-        @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; scroll-behavior: auto !important; } }
+
+        @media (max-width: 575.98px) {
+            .exam-bar {
+                padding: .6rem 0;
+            }
+
+            .progress-text {
+                font-size: .85rem;
+            }
+
+            #timer {
+                font-size: 1.25rem;
+            }
+
+            .exam-facts {
+                font-size: .83rem;
+            }
+
+            .q-text {
+                font-size: 1rem;
+            }
+
+            .option {
+                min-height: 46px;
+                padding: .6rem .7rem;
+            }
+
+            .nav-row {
+                gap: .4rem;
+            }
+
+            .btn-brand,
+            .btn-ghost,
+            .btn-hold {
+                font-size: .85rem;
+                min-height: 44px;
+                padding: .4rem;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                transition: none !important;
+                animation: none !important;
+                scroll-behavior: auto !important;
+            }
+        }
     </style>
 </head>
+
 <body>
 
-<!-- Sticky bar -->
+<!-- TERMS AND CONDITIONS POPUP -->
+<div class="modal fade"
+     id="termsModal"
+     tabindex="-1"
+     aria-labelledby="termsModalTitle"
+     aria-hidden="true"
+     data-bs-backdrop="static"
+     data-bs-keyboard="false">
+
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg"
+             style="border-radius: 18px;">
+
+            <div class="modal-header text-white"
+                 style="background: #3b3fd8; border-radius: 18px 18px 0 0;">
+
+                <div>
+                    <h5 class="modal-title fw-bold" id="termsModalTitle">
+                        <i class="bi bi-shield-check me-2"></i>
+                        Exam Terms &amp; Conditions
+                    </h5>
+                    <small>Please read the instructions carefully.</small>
+                </div>
+
+            </div>
+
+            <div class="modal-body p-4">
+
+                <div class="terms-icon">
+                    <i class="bi bi-journal-check"></i>
+                </div>
+
+                <h5 class="fw-bold mb-3">Before you begin</h5>
+
+                <p class="text-secondary">
+                    Please review the following rules before starting your exam.
+                </p>
+
+                <ol class="terms-list ps-3">
+                    <li>
+                        <strong>Time limit:</strong>
+                        The exam timer starts after you click
+                        <em>Start Exam</em>.
+                    </li>
+
+                    <li>
+                        <strong>Automatic submission:</strong>
+                        When the allotted time expires, the system will
+                        automatically submit your exam.
+                    </li>
+
+                    <li>
+                        <strong>Answer selection:</strong>
+                        Select an option to record your answer. Unanswered
+                        questions may receive zero marks according to the
+                        exam marking rules.
+                    </li>
+
+                    <li>
+                        <strong>Answer changes:</strong>
+                        You may change your answers before submission,
+                        unless the exam rules specify otherwise.
+                    </li>
+
+                    <li>
+                        <strong>Refresh and navigation:</strong>
+                        Avoid refreshing or closing the exam page. Your
+                        progress will only be recoverable if the system
+                        has been configured to save it.
+                    </li>
+
+                    <li>
+                        <strong>Fair conduct:</strong>
+                        Do not use unauthorized assistance or share exam
+                        questions or answers with other students.
+                    </li>
+
+                    <li>
+                        <strong>Final submission:</strong>
+                        Once submitted, your answers cannot be changed
+                        through this exam attempt.
+                    </li>
+
+                    <li>
+                        <strong>Technical issues:</strong>
+                        Contact your exam administrator if a technical
+                        problem occurs during the exam.
+                    </li>
+                </ol>
+
+                <div class="submit-warning mb-3">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Important:</strong>
+                    You cannot pause the timer by closing this popup
+                    or navigating away from the exam.
+                </div>
+
+                <div class="form-check terms-check">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           id="agreeTerms">
+
+                    <label class="form-check-label fw-semibold"
+                           for="agreeTerms">
+                        I have read and agree to these Terms &amp; Conditions.
+                        I understand that the exam will be automatically
+                        submitted when the time expires.
+                    </label>
+                </div>
+
+                <div id="termsError"
+                     class="text-danger small mt-2 d-none"
+                     role="alert">
+                    Please agree to the Terms &amp; Conditions to continue.
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button"
+                        id="startExamBtn"
+                        class="btn btn-primary w-100 py-2"
+                        style="background:#3b3fd8; border-color:#3b3fd8;"
+                        disabled>
+                    <i class="bi bi-play-circle-fill me-2"></i>
+                    I Agree — Start Exam
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- STICKY EXAM BAR -->
 <div class="exam-bar">
     <div class="container">
-        <span class="progress-text">Question <span id="currentNum">1</span> of <span th:text="${#lists.size(questions)}">20</span></span>
+        <span class="progress-text">
+            Question <span id="currentNum">1</span> of
+            <span th:text="${#lists.size(questions)}">20</span>
+        </span>
+
         <span class="timer-wrap" role="group" aria-label="Time left">
             <i class="bi bi-stopwatch" aria-hidden="true"></i>
             <span id="timer" role="timer">--:--</span>
@@ -154,84 +644,196 @@
 
 <main class="container">
 
-    <!-- Student and exam details -->
+    <!-- STUDENT AND EXAM DETAILS -->
     <div class="info">
         <div class="who">
-            <img th:if="${student.profilePicUrl != null}"
-                 th:src="@{${student.profilePicUrl}}" alt="" class="avatar">
-            <svg th:if="${student.profilePicUrl == null}"
-                 xmlns="http://www.w3.org/2000/svg" width="44" height="44" fill="currentColor"
-                 class="avatar" viewBox="0 0 16 16" aria-hidden="true">
+
+            <img th:if="${student.profilePicUrl != null
+                         and !#strings.isEmpty(student.profilePicUrl)}"
+                 th:src="@{${student.profilePicUrl}}"
+                 alt="Student profile"
+                 class="avatar">
+
+            <svg th:if="${student.profilePicUrl == null
+                         or #strings.isEmpty(student.profilePicUrl)}"
+                 xmlns="http://www.w3.org/2000/svg"
+                 width="44"
+                 height="44"
+                 fill="currentColor"
+                 class="avatar"
+                 viewBox="0 0 16 16"
+                 aria-hidden="true">
+
                 <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
-                <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+                <path fill-rule="evenodd"
+                      d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
             </svg>
+
             <div style="min-width:0;">
-                <p class="who-name" th:text="${student.fullName}">Student name</p>
-                <p class="who-contact"><span th:text="${student.username}">student@example.com</span> &middot; <span th:text="${student.mobileNumber}">9572181024</span></p>
+                <p class="who-name"
+                   th:text="${student.fullName}">
+                    Student name
+                </p>
+
+                <p class="who-contact">
+                    <span th:text="${student.username}">
+                        student@example.com
+                    </span>
+                    &middot;
+                    <span th:text="${student.mobileNumber}">
+                        Mobile number
+                    </span>
+                </p>
             </div>
         </div>
+
         <div class="exam-facts">
-            <span><strong>Exam:</strong> <span th:text="${exam.title}">Exam title</span></span>
-            <span><strong>Time:</strong> <span th:text="${exam.durationInMinutes} + ' minutes'">60 minutes</span></span>
-            <span><strong>Questions:</strong> <span th:text="${#lists.size(questions)}">20</span></span>
+            <span>
+                <strong>Exam:</strong>
+                <span th:text="${exam.title}">Exam title</span>
+            </span>
+
+            <span>
+                <strong>Time:</strong>
+                <span th:text="${exam.durationInMinutes} + ' minutes'">
+                    60 minutes
+                </span>
+            </span>
+
+            <span>
+                <strong>Questions:</strong>
+                <span th:text="${#lists.size(questions)}">20</span>
+            </span>
         </div>
     </div>
 
-    <form id="exam-form" th:action="@{/exam/submit}" method="post">
-        <input type="hidden" name="examId" th:value="${exam.id}" />
+    <!-- EXAM FORM -->
+    <form id="exam-form"
+          th:action="@{/exam/submit}"
+          method="post">
+
+        <input type="hidden"
+               name="examId"
+               th:value="${exam.id}">
+
+        <input type="hidden"
+               name="termsAccepted"
+               id="termsAccepted"
+               value="false">
 
         <div class="exam-layout">
 
-            <!-- Questions -->
+            <!-- QUESTIONS -->
             <div>
-                <div class="form-msg" id="formMsg" role="alert"></div>
+                <div class="form-msg"
+                     id="formMsg"
+                     role="alert"></div>
 
                 <div th:each="question, iter : ${questions}"
                      class="question-card"
                      th:id="|q-card-${iter.index}|"
                      th:data-question-index="${iter.index}">
 
-                    <p class="q-head" th:text="|Question ${iter.count} (Marks: ${question.marks})|">Question 1 (Marks: 1)</p>
-                    <p class="q-text" th:text="${question.text}">Question text...</p>
+                    <p class="q-head"
+                       th:text="|Question ${iter.count} (Marks: ${question.marks})|">
+                        Question 1 (Marks: 1)
+                    </p>
 
-                    <!-- required is on the first option; it applies to the whole group -->
-                    <label class="option" th:for="|q${question.id}_opt1|">
-                        <input type="radio" th:name="|q_${question.id}|" th:id="|q${question.id}_opt1|" value="1" required>
-                        <span th:text="${question.option1}">Option 1</span>
+                    <p class="q-text"
+                       th:text="${question.text}">
+                        Question text
+                    </p>
+
+                    <label class="option"
+                           th:for="|q${question.id}_opt1|">
+
+                        <input type="radio"
+                               th:name="|q_${question.id}|"
+                               th:id="|q${question.id}_opt1|"
+                               value="1">
+
+                        <span th:text="${question.option1}">
+                            Option 1
+                        </span>
                     </label>
-                    <label class="option" th:for="|q${question.id}_opt2|">
-                        <input type="radio" th:name="|q_${question.id}|" th:id="|q${question.id}_opt2|" value="2">
-                        <span th:text="${question.option2}">Option 2</span>
+
+                    <label class="option"
+                           th:for="|q${question.id}_opt2|">
+
+                        <input type="radio"
+                               th:name="|q_${question.id}|"
+                               th:id="|q${question.id}_opt2|"
+                               value="2">
+
+                        <span th:text="${question.option2}">
+                            Option 2
+                        </span>
                     </label>
-                    <label class="option" th:for="|q${question.id}_opt3|">
-                        <input type="radio" th:name="|q_${question.id}|" th:id="|q${question.id}_opt3|" value="3">
-                        <span th:text="${question.option3}">Option 3</span>
+
+                    <label class="option"
+                           th:for="|q${question.id}_opt3|">
+
+                        <input type="radio"
+                               th:name="|q_${question.id}|"
+                               th:id="|q${question.id}_opt3|"
+                               value="3">
+
+                        <span th:text="${question.option3}">
+                            Option 3
+                        </span>
                     </label>
-                    <label class="option" th:for="|q${question.id}_opt4|">
-                        <input type="radio" th:name="|q_${question.id}|" th:id="|q${question.id}_opt4|" value="4">
-                        <span th:text="${question.option4}">Option 4</span>
+
+                    <label class="option"
+                           th:for="|q${question.id}_opt4|">
+
+                        <input type="radio"
+                               th:name="|q_${question.id}|"
+                               th:id="|q${question.id}_opt4|"
+                               value="4">
+
+                        <span th:text="${question.option4}">
+                            Option 4
+                        </span>
                     </label>
                 </div>
 
+                <!-- QUESTION NAVIGATION -->
                 <div class="nav-row">
-                    <button type="button" id="prev-btn" class="btn btn-ghost">
-                        <i class="bi bi-arrow-left"></i>Previous
+                    <button type="button"
+                            id="prev-btn"
+                            class="btn btn-ghost">
+                        <i class="bi bi-arrow-left"></i>
+                        Previous
                     </button>
-                    <button type="button" id="hold-btn" class="btn btn-hold">
-                        <i class="bi bi-pause-circle"></i><span id="hold-label">Hold</span>
+
+                    <button type="button"
+                            id="hold-btn"
+                            class="btn btn-hold">
+                        <i class="bi bi-pause-circle"></i>
+                        <span id="hold-label">Hold</span>
                     </button>
-                    <button type="button" id="next-btn" class="btn btn-brand">
-                        Next<i class="bi bi-arrow-right"></i>
+
+                    <button type="button"
+                            id="next-btn"
+                            class="btn btn-brand">
+                        Next
+                        <i class="bi bi-arrow-right"></i>
                     </button>
                 </div>
             </div>
 
-            <!-- Palette and submit -->
+            <!-- QUESTION PALETTE -->
             <div class="palette">
                 <div class="palette-head">
                     <h2>Questions</h2>
-                    <span class="palette-count"><span id="answeredCount">0</span> of <span th:text="${#lists.size(questions)}">20</span> answered</span>
+
+                    <span class="palette-count">
+                        <span id="answeredCount">0</span> of
+                        <span th:text="${#lists.size(questions)}">20</span>
+                        answered
+                    </span>
                 </div>
+
                 <div class="palette-grid">
                     <button type="button"
                             th:each="q, iter : ${questions}"
@@ -240,146 +842,410 @@
                             th:data-question-index="${iter.index}">
                     </button>
                 </div>
+
                 <p class="legend">
-                    <span><i style="background:var(--ok)"></i>Answered</span>
-                    <span><i style="background:#fdecea;border:1px solid var(--bad)"></i>Not attempted</span>
-                    <span><i style="background:#98a2b3"></i>On hold</span>
+                    <span>
+                        <i style="background:var(--ok)"></i>
+                        Answered
+                    </span>
+
+                    <span>
+                        <i style="background:#fdecea;border:1px solid var(--bad)"></i>
+                        Not attempted
+                    </span>
+
+                    <span>
+                        <i style="background:#98a2b3"></i>
+                        On hold
+                    </span>
                 </p>
 
-                <button type="submit" id="submit-btn" class="btn btn-submit">
-                    <i class="bi bi-check-circle-fill"></i>Submit exam
+                <button type="submit"
+                        id="submit-btn"
+                        class="btn btn-submit">
+                    <i class="bi bi-check-circle-fill"></i>
+                    Submit exam
                 </button>
             </div>
+
         </div>
     </form>
 </main>
 
+<!-- BOOTSTRAP JAVASCRIPT -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- EXAM TIMER SCRIPT -->
 <script th:src="@{/js/exam-timer.js}"></script>
 
 <script th:inline="javascript">
-    document.addEventListener('DOMContentLoaded', function () {
-        // --- Timer ---
-        var durationInMinutes = /*[[${exam.durationInMinutes}]]*/ 60;
-        var timerDisplay = document.getElementById('timer');
-        var examForm = document.getElementById('exam-form');
-        startTimer(durationInMinutes, timerDisplay, examForm);
+document.addEventListener('DOMContentLoaded', function () {
 
-        // --- Elements ---
-        var questions = document.querySelectorAll('.question-card');
-        var paletteBtns = document.querySelectorAll('.q-palette-btn');
-        var prevBtn = document.getElementById('prev-btn');
-        var nextBtn = document.getElementById('next-btn');
-        var holdBtn = document.getElementById('hold-btn');
-        var holdLabel = document.getElementById('hold-label');
-        var currentNum = document.getElementById('currentNum');
-        var answeredCount = document.getElementById('answeredCount');
-        var formMsg = document.getElementById('formMsg');
-        var phone = window.matchMedia('(max-width: 991.98px)');
+    /* -----------------------------------------
+       TERMS AND CONDITIONS
+    ----------------------------------------- */
 
-        var total = questions.length;
-        var current = 0;
+    var termsModalElement = document.getElementById('termsModal');
+    var termsModal = new bootstrap.Modal(termsModalElement);
 
-        function paletteBtnFor(index) {
-            return document.querySelector('.q-palette-btn[data-question-index="' + index + '"]');
-        }
+    var agreeTerms = document.getElementById('agreeTerms');
+    var startExamBtn = document.getElementById('startExamBtn');
+    var termsAccepted = document.getElementById('termsAccepted');
+    var termsError = document.getElementById('termsError');
 
-        function paletteLabel(btn, answered) {
-            var held = btn.classList.contains('held');
-            btn.setAttribute('aria-label', 'Question ' + btn.textContent.trim() +
-                (held ? ', on hold' : (answered ? ', answered' : ', not answered')));
-        }
-        paletteBtns.forEach(function (b) { paletteLabel(b, false); });
+    var examForm = document.getElementById('exam-form');
+    var timerDisplay = document.getElementById('timer');
 
-        // --- Hold button state for the current question ---
-        function refreshHoldButton() {
-            var btn = paletteBtnFor(current);
-            var held = btn && btn.classList.contains('held');
-            holdLabel.textContent = held ? 'Unhold' : 'Hold';
-            holdBtn.classList.toggle('is-held', !!held);
-        }
+    var durationInMinutes = /*[[${exam.durationInMinutes}]]*/ 60;
+    var examStarted = false;
+    var submissionInProgress = false;
 
-        // --- Pagination ---
-        function showQuestion(index, scroll) {
-            if (index < 0 || index >= total) return;
-            questions.forEach(function (q) { q.classList.remove('active'); });
-            var card = document.getElementById('q-card-' + index);
-            if (card) card.classList.add('active');
-            paletteBtns.forEach(function (b) {
-                b.classList.remove('active');
-                b.removeAttribute('aria-current');
-            });
-            var btn = paletteBtnFor(index);
-            if (btn) { btn.classList.add('active'); btn.setAttribute('aria-current', 'true'); }
-            current = index;
-            currentNum.textContent = index + 1;
-            prevBtn.disabled = (current === 0);
-            nextBtn.disabled = (current === total - 1);
-            formMsg.classList.remove('show');
-            refreshHoldButton();
-            // On phones, bring the new question to the top of the screen
-            if (scroll && phone.matches && card) card.scrollIntoView({ block: 'start' });
-        }
+    // Do not start the timer until the student agrees.
+    termsModal.show();
 
-        nextBtn.addEventListener('click', function () { showQuestion(current + 1, true); });
-        prevBtn.addEventListener('click', function () { showQuestion(current - 1, true); });
-        paletteBtns.forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                showQuestion(parseInt(btn.getAttribute('data-question-index'), 10), true);
-            });
-        });
-
-        // --- Hold / Unhold ---
-        holdBtn.addEventListener('click', function () {
-            var btn = paletteBtnFor(current);
-            if (!btn) return;
-            btn.classList.toggle('held');
-            paletteLabel(btn, btn.classList.contains('answered'));
-            refreshHoldButton();
-            // After putting a question on hold, move on to the next one
-            if (btn.classList.contains('held') && current < total - 1) showQuestion(current + 1, true);
-        });
-
-        // --- Answered state (palette, highlighted option, counter) ---
-        function markAnswered(radio) {
-            var card = radio.closest('.question-card');
-            card.querySelectorAll('.option').forEach(function (o) {
-                o.classList.toggle('selected', o.contains(radio) && radio.checked);
-            });
-            var btn = paletteBtnFor(card.getAttribute('data-question-index'));
-            if (btn) {
-                btn.classList.add('answered');
-                btn.classList.remove('held');   // answering a question releases the hold
-                paletteLabel(btn, true);
-            }
-            answeredCount.textContent = document.querySelectorAll('.q-palette-btn.answered').length;
-            formMsg.classList.remove('show');
-            refreshHoldButton();
-        }
-
-        var radios = document.querySelectorAll('input[type="radio"]');
-        radios.forEach(function (radio) {
-            radio.addEventListener('change', function () { markAnswered(radio); });
-            if (radio.checked) markAnswered(radio); // answers the browser restored on reload
-        });
-
-        // --- Unanswered question on submit ---
-        // Only the visible question can be focused, so without this the Submit button would
-        // appear to do nothing. Jump to the first unanswered question and say why.
-        var reported = false;
-        examForm.addEventListener('invalid', function (e) {
-            if (reported) return;
-            reported = true;
-            setTimeout(function () { reported = false; }, 0);
-            var card = e.target.closest('.question-card');
-            if (!card) return;
-            var index = parseInt(card.getAttribute('data-question-index'), 10);
-            showQuestion(index, true);
-            formMsg.textContent = 'Please answer question ' + (index + 1) + ' before submitting.';
-            formMsg.classList.add('show');
-        }, true);
-
-        showQuestion(0, false);
+    agreeTerms.addEventListener('change', function () {
+        startExamBtn.disabled = !agreeTerms.checked;
+        termsError.classList.add('d-none');
     });
+
+    startExamBtn.addEventListener('click', function () {
+        if (!agreeTerms.checked) {
+            termsError.classList.remove('d-none');
+            return;
+        }
+
+        if (examStarted) {
+            return;
+        }
+
+        examStarted = true;
+        termsAccepted.value = 'true';
+
+        termsModal.hide();
+
+        // Start the existing timer only after consent.
+        if (typeof startTimer === 'function') {
+            startTimer(durationInMinutes, timerDisplay, examForm);
+        } else {
+            console.error(
+                'startTimer() was not found. Check /js/exam-timer.js.'
+            );
+        }
+    });
+
+    /* -----------------------------------------
+       QUESTION NAVIGATION
+    ----------------------------------------- */
+
+    var questions = document.querySelectorAll('.question-card');
+    var paletteBtns = document.querySelectorAll('.q-palette-btn');
+
+    var prevBtn = document.getElementById('prev-btn');
+    var nextBtn = document.getElementById('next-btn');
+    var holdBtn = document.getElementById('hold-btn');
+    var holdLabel = document.getElementById('hold-label');
+
+    var currentNum = document.getElementById('currentNum');
+    var answeredCount = document.getElementById('answeredCount');
+    var formMsg = document.getElementById('formMsg');
+
+    var phone = window.matchMedia('(max-width: 991.98px)');
+    var total = questions.length;
+    var current = 0;
+
+    function paletteBtnFor(index) {
+        return document.querySelector(
+            '.q-palette-btn[data-question-index="' + index + '"]'
+        );
+    }
+
+    function paletteLabel(btn) {
+        if (!btn) return;
+
+        var held = btn.classList.contains('held');
+        var answered = btn.classList.contains('answered');
+
+        var status = held
+            ? 'on hold'
+            : answered
+                ? 'answered'
+                : 'not answered';
+
+        btn.setAttribute(
+            'aria-label',
+            'Question ' + btn.textContent.trim() + ', ' + status
+        );
+    }
+
+    paletteBtns.forEach(function (btn) {
+        paletteLabel(btn);
+    });
+
+    function refreshHoldButton() {
+        var btn = paletteBtnFor(current);
+        var held = btn && btn.classList.contains('held');
+
+        holdLabel.textContent = held ? 'Unhold' : 'Hold';
+        holdBtn.classList.toggle('is-held', !!held);
+    }
+
+    function showQuestion(index, shouldScroll) {
+        if (index < 0 || index >= total) return;
+
+        questions.forEach(function (question) {
+            question.classList.remove('active');
+        });
+
+        var card = document.getElementById('q-card-' + index);
+
+        if (card) {
+            card.classList.add('active');
+        }
+
+        paletteBtns.forEach(function (btn) {
+            btn.classList.remove('active');
+            btn.removeAttribute('aria-current');
+        });
+
+        var paletteBtn = paletteBtnFor(index);
+
+        if (paletteBtn) {
+            paletteBtn.classList.add('active');
+            paletteBtn.setAttribute('aria-current', 'true');
+        }
+
+        current = index;
+        currentNum.textContent = index + 1;
+
+        prevBtn.disabled = current === 0;
+        nextBtn.disabled = current === total - 1;
+
+        formMsg.classList.remove('show');
+        refreshHoldButton();
+
+        if (shouldScroll && phone.matches && card) {
+            card.scrollIntoView({
+                block: 'start',
+                behavior: 'auto'
+            });
+        }
+    }
+
+    nextBtn.addEventListener('click', function () {
+        showQuestion(current + 1, true);
+    });
+
+    prevBtn.addEventListener('click', function () {
+        showQuestion(current - 1, true);
+    });
+
+    paletteBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var index = parseInt(
+                btn.getAttribute('data-question-index'),
+                10
+            );
+
+            showQuestion(index, true);
+        });
+    });
+
+    /* -----------------------------------------
+       HOLD AND UNHOLD
+    ----------------------------------------- */
+
+    holdBtn.addEventListener('click', function () {
+        var btn = paletteBtnFor(current);
+
+        if (!btn) return;
+
+        btn.classList.toggle('held');
+        paletteLabel(btn);
+        refreshHoldButton();
+
+        if (btn.classList.contains('held') && current < total - 1) {
+            showQuestion(current + 1, true);
+        }
+    });
+
+    /* -----------------------------------------
+       ANSWERED STATE
+    ----------------------------------------- */
+
+    function markAnswered(radio) {
+        var card = radio.closest('.question-card');
+
+        if (!card) return;
+
+        card.querySelectorAll('.option').forEach(function (option) {
+            var input = option.querySelector('input[type="radio"]');
+
+            option.classList.toggle(
+                'selected',
+                !!input && input.checked
+            );
+        });
+
+        var index = parseInt(
+            card.getAttribute('data-question-index'),
+            10
+        );
+
+        var btn = paletteBtnFor(index);
+
+        if (btn) {
+            btn.classList.add('answered');
+            btn.classList.remove('held');
+            paletteLabel(btn);
+        }
+
+        answeredCount.textContent =
+            document.querySelectorAll('.q-palette-btn.answered').length;
+
+        formMsg.classList.remove('show');
+        refreshHoldButton();
+    }
+
+    document.querySelectorAll('input[type="radio"]').forEach(function (radio) {
+        radio.addEventListener('change', function () {
+            markAnswered(radio);
+        });
+
+        if (radio.checked) {
+            markAnswered(radio);
+        }
+    });
+
+    /* -----------------------------------------
+       SUBMISSION CONFIRMATION
+    ----------------------------------------- */
+
+    var submitBtn = document.getElementById('submit-btn');
+
+    examForm.addEventListener('submit', function (event) {
+
+        // Never allow submission before the terms have been accepted.
+        if (!examStarted || termsAccepted.value !== 'true') {
+            event.preventDefault();
+            termsModal.show();
+            termsError.classList.remove('d-none');
+            return;
+        }
+
+        // Avoid duplicate submissions.
+        if (submissionInProgress) {
+            event.preventDefault();
+            return;
+        }
+
+        // The timer's automatic submission uses requestSubmit() or
+        // submit(). The timer should be adapted to bypass this confirmation
+        // for expiry-triggered submissions.
+        if (!examForm.dataset.autoSubmit && !examForm.dataset.confirmed) {
+            event.preventDefault();
+
+            var confirmModalElement =
+                document.getElementById('submitConfirmModal');
+
+            var confirmModal =
+                bootstrap.Modal.getOrCreateInstance(confirmModalElement);
+
+            confirmModal.show();
+            return;
+        }
+
+        submissionInProgress = true;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML =
+            '<span class="spinner-border spinner-border-sm me-2"></span>' +
+            'Submitting...';
+    });
+
+    /* -----------------------------------------
+       INITIALIZE
+    ----------------------------------------- */
+
+    if (total > 0) {
+        showQuestion(0, false);
+    } else {
+        formMsg.textContent = 'No questions are available for this exam.';
+        formMsg.classList.add('show');
+        submitBtn.disabled = true;
+    }
+
+    // Exam is not submitted if a student clicks outside the terms modal:
+    // the backdrop and Escape key are disabled.
+});
+</script>
+
+<!-- MANUAL SUBMISSION CONFIRMATION -->
+<div class="modal fade"
+     id="submitConfirmModal"
+     tabindex="-1"
+     aria-labelledby="submitConfirmTitle"
+     aria-hidden="true">
+
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow"
+             style="border-radius:16px;">
+
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="submitConfirmTitle">
+                    <i class="bi bi-send-check me-2 text-success"></i>
+                    Submit your exam?
+                </h5>
+
+                <button type="button"
+                        class="btn-close"
+                        data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <p class="mb-2">
+                    Are you sure you want to submit your exam?
+                </p>
+
+                <p class="text-secondary small mb-0">
+                    After submission, you will not be able to change
+                    your answers in this attempt.
+                </p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button"
+                        class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">
+                    Continue Exam
+                </button>
+
+                <button type="button"
+                        class="btn btn-success"
+                        id="confirmSubmitBtn">
+                    Yes, Submit Exam
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var examForm = document.getElementById('exam-form');
+    var confirmSubmitBtn = document.getElementById('confirmSubmitBtn');
+    var confirmModalElement = document.getElementById('submitConfirmModal');
+
+    confirmSubmitBtn.addEventListener('click', function () {
+        examForm.dataset.confirmed = 'true';
+
+        var modal = bootstrap.Modal.getOrCreateInstance(confirmModalElement);
+        modal.hide();
+
+        // requestSubmit triggers form validation and the submit event.
+        examForm.requestSubmit();
+    });
+});
 </script>
 
 </body>
