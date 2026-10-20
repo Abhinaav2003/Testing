@@ -1,13 +1,9 @@
-# Online Exam System
+<h1 align="center">Online Exam System</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Java-17-blue?style=flat-square&logo=openjdk&logoColor=white" alt="Java 17">
-  <img src="https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen?style=flat-square&logo=springboot&logoColor=white" alt="Spring Boot 3">
-  <img src="https://img.shields.io/badge/Spring%20Security-6.x-green?style=flat-square&logo=springsecurity&logoColor=white" alt="Spring Security 6">
-  <img src="https://img.shields.io/badge/JPA-Hibernate-red?style=flat-square" alt="JPA / Hibernate">
-  <img src="https://img.shields.io/badge/Database-PostgreSQL-336791?style=flat-square&logo=postgresql&logoColor=white" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/Build-Maven-C71A36?style=flat-square&logo=apachemaven&logoColor=white" alt="Maven">
+  <img src="https://skillicons.dev/icons?i=java,spring,hibernate,postgres,maven" alt="Tech stack icons" />
 </p>
+
 
 <p align="center">
   A secure web-based examination platform built with Spring Boot, Spring Security, Thymeleaf, Bootstrap 5, and PostgreSQL.
@@ -46,6 +42,12 @@ The platform covers the full examination lifecycle: exam and question management
 
 ## Features
 
+### Project Flow Diagram
+
+<p align="center">
+  <img src="./screenshots/Flow%20Diagram.png" alt="Front page" width="90%">
+</p>
+
 ### Administrator
 
 - Secure authentication with role-based access control
@@ -81,28 +83,28 @@ Screenshots are stored in the `screenshots/` directory.
   <img src="./screenshots/Front%20Page.png" alt="Front page" width="90%">
 </p>
 
+### Create Account
+
+<p align="center">
+  <img src="./screenshots/Create%20Page.png" alt="Question management page" width="90%">
+</p>
+
+### Login Account
+
+<p align="center">
+  <img src="./screenshots/Login%20Page.png" alt="Student dashboard" width="90%">
+</p>
+
 ### Admin Dashboard
 
 <p align="center">
   <img src="./screenshots/Admin%20Page.png" alt="Admin dashboard" width="90%">
 </p>
 
-### Exam Management
+### Manage Quiz
 
 <p align="center">
-  <img src="./screenshots/Questions%20Page.png" alt="Exam management page" width="90%">
-</p>
-
-### Question Management
-
-<p align="center">
-  <img src="./screenshots/ManageQuestion%20Page.png" alt="Question management page" width="90%">
-</p>
-
-### Student Dashboard
-
-<p align="center">
-  <img src="./screenshots/Student%20Page.png" alt="Student dashboard" width="90%">
+  <img src="./screenshots/Manage%20Page.png" alt="Exam management page" width="90%">
 </p>
 
 ---
@@ -111,16 +113,15 @@ Screenshots are stored in the `screenshots/` directory.
 
 | Layer | Technology |
 |---|---|
-| Language | Java 17+ |
+| Language | Java 17 |
 | Backend Framework | Spring Boot 3.x |
 | Security | Spring Security 6 |
 | Templating | Thymeleaf, HTML5, CSS3 |
 | UI Framework | Bootstrap 5 |
 | Charts | Chart.js (optional) |
 | ORM | Hibernate / Spring Data JPA |
-| Database | PostgreSQL 14+ |
+| Database | Neon Database |
 | Build Tool | Maven |
-| File Storage | Local file system |
 | Version Control | Git / GitHub |
 
 ---
@@ -146,7 +147,6 @@ online-exam-system/
 │   │       ├── static/
 │   │       │   ├── css/
 │   │       │   ├── js/
-│   │       │   └── images/
 │   │       └── application.properties
 │   └── test/
 ├── screenshots/
@@ -181,42 +181,6 @@ cd online-exam-system-master-main
 
 > If `pom.xml` is located in a nested directory, change into that directory before running Maven commands.
 
-**2. Set up PostgreSQL**
-
-Create a database for the application. Using `psql`:
-
-```bash
-psql -U postgres -c "CREATE DATABASE examdb;"
-```
-
-Or start a disposable PostgreSQL instance with Docker:
-
-```bash
-docker run --name exam-postgres \
-  -e POSTGRES_DB=examdb \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=your_password \
-  -p 5432:5432 \
-  -d postgres:16
-```
-
-**3. Set database credentials**
-
-The application reads credentials from environment variables (see [Configuration](#configuration)).
-
-Windows (PowerShell):
-
-```powershell
-$env:DB_USERNAME = "postgres"
-$env:DB_PASSWORD = "your_password"
-```
-
-macOS / Linux:
-
-```bash
-export DB_USERNAME=postgres
-export DB_PASSWORD=your_password
-```
 
 **4. Build the application**
 
@@ -256,60 +220,6 @@ Navigate to **http://localhost:8080**. The port may differ if `server.port` is c
 
 The application uses PostgreSQL for persistence. Tables are created and updated automatically by Hibernate on startup.
 
-### Maven dependency
-
-Remove the H2 dependency from `pom.xml` and add the PostgreSQL JDBC driver:
-
-```xml
-<dependency>
-    <groupId>org.postgresql</groupId>
-    <artifactId>postgresql</artifactId>
-    <scope>runtime</scope>
-</dependency>
-```
-
-### Example `application.properties`
-
-Use this as a reference and adapt it to your project's dependencies and existing settings.
-
-```properties
-spring.datasource.url=jdbc:postgresql://localhost:5432/examdb
-spring.datasource.driver-class-name=org.postgresql.Driver
-spring.datasource.username=${DB_USERNAME:postgres}
-spring.datasource.password=${DB_PASSWORD}
-
-spring.jpa.hibernate.ddl-auto=update
-spring.jpa.open-in-view=false
-
-server.port=8080
-```
-
-### Environment variables
-
-| Variable | Description | Default |
-|---|---|---|
-| `DB_USERNAME` | PostgreSQL user | `postgres` |
-| `DB_PASSWORD` | PostgreSQL password | none (required) |
-
-### Removing H2 from an existing setup
-
-If you are migrating from the earlier H2 configuration:
-
-- Delete the `com.h2database:h2` dependency from `pom.xml`.
-- Remove all `spring.h2.console.*` properties from `application.properties`.
-- Remove any `/h2-console/**` matchers and `frameOptions` overrides from the Spring Security configuration.
-- Delete the local `data/` directory containing the old H2 database files, if you no longer need them.
-
-Existing H2 data is not migrated automatically. Export it first if you need to keep it.
-
-### Configuration Notes
-
-- The database named in `spring.datasource.url` must exist before the application starts; Hibernate creates tables, not the database itself.
-- `spring.jpa.hibernate.ddl-auto=update` is suited to development. Use a managed migration tool such as Flyway or Liquibase in production.
-- Do not commit real credentials to version control. Externalize secrets through environment variables or a secrets manager.
-- For production, create a dedicated database user with only the privileges the application needs instead of using the `postgres` superuser.
-
----
 
 ## Default Administrator Account
 
@@ -317,8 +227,8 @@ The application may create an administrator account on startup. Check `OnlineExa
 
 | Field | Example Value |
 |---|---|
-| Username | `admin` |
-| Password | `adminpass` |
+| Username | `------` |
+| Password | `------` |
 
 These values are illustrative and have not been independently verified against the current source.
 
@@ -345,18 +255,6 @@ Remove-Item -Recurse -Force target -ErrorAction SilentlyContinue
 
 This removes generated build artifacts in `target/` and rebuilds the project. It does not touch the PostgreSQL database or uploaded profile pictures.
 
-**Useful PostgreSQL commands**
-
-| Task | Command |
-|---|---|
-| Connect to the database | `psql -U postgres -d examdb` |
-| List tables | `\dt` (inside `psql`) |
-| Back up the database | `pg_dump -U postgres examdb > examdb_backup.sql` |
-| Restore from backup | `psql -U postgres -d examdb < examdb_backup.sql` |
-| Stop the Docker container | `docker stop exam-postgres` |
-| Start the Docker container | `docker start exam-postgres` |
-
----
 
 ## Roadmap
 
