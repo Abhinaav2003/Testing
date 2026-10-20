@@ -223,6 +223,7 @@
             position: relative;
             height: 260px;
             width: 100%;
+            max-width: 480px;   /* decrease/increase to change chart width */
             min-width: 0;
         }
 
@@ -641,14 +642,14 @@
 
                     backgroundColor: 'rgba(59, 63, 216, 0.82)',
                     hoverBackgroundColor: '#2b2fb0',
-                    borderColor: '#ffffff',   // thin white line separates touching bars
+                    borderColor: '#3b3fd8',
                     borderWidth: 1,
-                    borderRadius: 0,          // square corners look cleaner when bars touch
+                    borderRadius: 6,
                     borderSkipped: false,
 
-                    // No spacing between bars
+                    // Small spacing between bars (raise toward 1.0 for less gap)
                     categoryPercentage: 1.0,
-                    barPercentage: 1.0
+                    barPercentage: 0.85
                 }]
             },
 
