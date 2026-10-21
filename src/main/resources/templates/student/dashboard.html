@@ -1,19 +1,13 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
     <title>Student Dashboard - Online Exam System</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-          rel="stylesheet">
-
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <style>
@@ -29,344 +23,102 @@
             --line: #d9deea;
         }
 
-        * {
-            box-sizing: border-box;
-        }
-
         body {
             font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
             color: var(--ink);
             background: var(--paper);
             min-height: 100vh;
-            margin: 0;
         }
+        h1, h2, h3 { font-weight: 800; letter-spacing: -0.02em; }
+        :focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
 
-        h1, h2, h3 {
-            font-weight: 800;
-            letter-spacing: -0.02em;
-        }
+        .page { padding: 1.5rem 0 2.5rem; }
 
-        :focus-visible {
-            outline: 3px solid var(--brand);
-            outline-offset: 2px;
-        }
-
-        .page {
-            padding: 1.5rem 0 2.5rem;
-        }
-
-        /* Welcome section */
-
-        .welcome {
-            display: flex;
-            align-items: center;
-            gap: .9rem;
-            margin-bottom: 1.25rem;
-            min-width: 0;
-        }
-
+        /* Welcome */
+        .welcome { display: flex; align-items: center; gap: .9rem; margin-bottom: 1.25rem; min-width: 0; }
         .avatar {
-            flex: none;
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 1px solid var(--line);
-            background: var(--surface);
-            color: var(--muted);
+            flex: none; width: 52px; height: 52px; border-radius: 50%; object-fit: cover;
+            border: 1px solid var(--line); background: var(--surface); color: var(--muted);
         }
+        .welcome h1 { font-size: clamp(1.3rem, 5vw, 1.9rem); margin: 0; overflow-wrap: anywhere; }
+        .welcome p { color: var(--muted); margin: 0; }
 
-        .welcome h1 {
-            font-size: clamp(1.3rem, 5vw, 1.9rem);
-            margin: 0;
-            overflow-wrap: anywhere;
-        }
+        .alert { border-radius: 10px; font-weight: 600; }
 
-        .welcome p {
-            color: var(--muted);
-            margin: 0;
-        }
-
-        .alert {
-            border-radius: 10px;
-            font-weight: 600;
-        }
-
-        /* Statistics */
-
+        /* Stats: three across, even on phones */
         .stat {
-            background: var(--surface);
-            border: 2px solid var(--ink);
-            border-radius: 14px;
-            padding: .75rem .5rem;
-            text-align: center;
-            height: 100%;
+            background: var(--surface); border: 2px solid var(--ink); border-radius: 14px;
+            padding: .75rem .5rem; text-align: center; height: 100%;
         }
+        .stat i { color: var(--brand); font-size: 1.2rem; }
+        .stat-value { font-size: clamp(1.15rem, 5vw, 2rem); font-weight: 800; line-height: 1.15; margin-top: .15rem; }
+        .stat-label { color: var(--muted); font-weight: 600; font-size: .85rem; }
 
-        .stat i {
-            color: var(--brand);
-            font-size: 1.2rem;
-        }
-
-        .stat-value {
-            font-size: clamp(1.15rem, 5vw, 2rem);
-            font-weight: 800;
-            line-height: 1.15;
-            margin-top: .15rem;
-            overflow-wrap: anywhere;
-        }
-
-        .stat-label {
-            color: var(--muted);
-            font-weight: 600;
-            font-size: .85rem;
-        }
-
-        /* Dashboard panels */
-
+        /* Panels */
         .panel {
-            background: var(--surface);
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            padding: 1rem;
-            height: 100%;
-            min-width: 0;
+            background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+            padding: 1rem; height: 100%;
         }
-
-        .panel h2 {
-            font-size: 1.15rem;
-            margin-bottom: .75rem;
-            display: flex;
-            align-items: center;
-            gap: .5rem;
-        }
-
-        .panel h2 i {
-            color: var(--brand);
-        }
+        .panel h2 { font-size: 1.15rem; margin-bottom: .75rem; display: flex; align-items: center; gap: .5rem; }
+        .panel h2 i { color: var(--brand); }
 
         /* Available exams */
-
-        .exam-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .exam-list li {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: .6rem;
-            padding: .8rem 0;
-            border-top: 1px solid var(--line);
-        }
-
-        .exam-list li:first-child {
-            border-top: 0;
-            padding-top: 0;
-        }
-
-        .exam-title {
-            font-weight: 700;
-            margin: 0;
-            overflow-wrap: anywhere;
-        }
-
-        .exam-meta {
-            color: var(--muted);
-            font-size: .95rem;
-        }
-
-        /* Buttons */
+        .exam-list { list-style: none; padding: 0; margin: 0; }
+        .exam-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .6rem; padding: .8rem 0; border-top: 1px solid var(--line); }
+        .exam-list li:first-child { border-top: 0; padding-top: 0; }
+        .exam-title { font-weight: 700; margin: 0; overflow-wrap: anywhere; }
+        .exam-meta { color: var(--muted); font-size: .95rem; }
 
         .btn-brand {
-            background: var(--brand);
-            color: #fff;
-            font-weight: 600;
-            padding: .6rem 1.1rem;
-            border-radius: 10px;
-            border: 0;
-            min-height: 44px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            background: var(--brand); color: #fff; font-weight: 600;
+            padding: .6rem 1.1rem; border-radius: 10px; border: 0; min-height: 44px;
+            display: inline-flex; align-items: center; justify-content: center;
         }
-
-        .btn-brand:hover {
-            background: var(--brand-dark);
-            color: #fff;
-        }
-
+        .btn-brand:hover { background: var(--brand-dark); color: #fff; }
         .btn-ghost {
-            font-weight: 600;
-            padding: .5rem 1rem;
-            border-radius: 10px;
-            min-height: 44px;
-            border: 2px solid var(--ink);
-            color: var(--ink);
-            background: transparent;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            font-weight: 600; padding: .5rem 1rem; border-radius: 10px; min-height: 44px;
+            border: 2px solid var(--ink); color: var(--ink); background: transparent;
+            display: inline-flex; align-items: center; justify-content: center;
         }
+        .btn-ghost:hover { background: var(--ink); color: #fff; }
 
-        .btn-ghost:hover {
-            background: var(--ink);
-            color: #fff;
-        }
-
-        /* Bar chart */
-
-        .chart-box {
-            position: relative;
-            height: 260px;
-            width: 100%;
-            min-width: 0;
-        }
-
-        #scoreChart {
-            width: 100%;
-            height: 100%;
-        }
+        /* Chart */
+        .chart-box { position: relative; height: 240px; } /* needed by Chart.js */
 
         /* Past results */
-
         .result-card {
-            background: var(--surface);
-            border: 2px solid var(--ink);
-            border-radius: 14px;
-            padding: 1rem;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: .75rem;
+            background: var(--surface); border: 2px solid var(--ink); border-radius: 14px;
+            padding: 1rem; height: 100%; display: flex; flex-direction: column; gap: .75rem;
         }
-
-        .result-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: .75rem;
-        }
-
-        .result-title {
-            font-weight: 800;
-            margin: 0;
-            overflow-wrap: anywhere;
-        }
-
-        .result-date {
-            color: var(--muted);
-            font-size: .95rem;
-            margin: 0;
-        }
-
+        .result-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; }
+        .result-title { font-weight: 800; margin: 0; overflow-wrap: anywhere; }
+        .result-date { color: var(--muted); font-size: .95rem; margin: 0; }
         .pct {
-            flex: none;
-            display: inline-flex;
-            align-items: center;
-            gap: .35rem;
-            font-weight: 800;
-            padding: .3rem .7rem;
-            border-radius: 999px;
-            white-space: nowrap;
+            flex: none; display: inline-flex; align-items: center; gap: .35rem;
+            font-weight: 800; padding: .3rem .7rem; border-radius: 999px; white-space: nowrap;
         }
+        .pct.pass { background: #e8f6f0; color: var(--ok); }
+        .pct.fail { background: #fdecea; color: var(--bad); }
+        .pct.na { background: var(--paper); color: var(--muted); }
+        .result-score { color: var(--muted); font-weight: 600; }
+        .result-score strong { color: var(--ink); }
 
-        .pct.pass {
-            background: #e8f6f0;
-            color: var(--ok);
-        }
-
-        .pct.fail {
-            background: #fdecea;
-            color: var(--bad);
-        }
-
-        .pct.na {
-            background: var(--paper);
-            color: var(--muted);
-        }
-
-        .result-score {
-            color: var(--muted);
-            font-weight: 600;
-        }
-
-        .result-score strong {
-            color: var(--ink);
-        }
-
-        .empty {
-            color: var(--muted);
-            text-align: center;
-            padding: 1.5rem .5rem;
-            margin: 0;
-        }
-
-        .empty i {
-            font-size: 2rem;
-            display: block;
-            margin-bottom: .25rem;
-        }
+        .empty { color: var(--muted); text-align: center; padding: 1.5rem .5rem; margin: 0; }
+        .empty i { font-size: 2rem; display: block; margin-bottom: .25rem; }
 
         @media (min-width: 576px) {
-            .page {
-                padding: 2.5rem 0 3rem;
-            }
-
-            .panel {
-                padding: 1.25rem;
-            }
-
-            .stat {
-                padding: 1rem;
-            }
-
-            .stat i {
-                font-size: 1.6rem;
-            }
-
-            .stat-label {
-                font-size: 1rem;
-            }
-
-            .chart-box {
-                height: 310px;
-            }
+            .page { padding: 2.5rem 0 3rem; }
+            .panel { padding: 1.25rem; }
+            .stat { padding: 1rem; }
+            .stat i { font-size: 1.6rem; }
+            .stat-label { font-size: 1rem; }
+            .chart-box { height: 300px; }
         }
-
-        @media (max-width: 575.98px) {
-            .exam-list li {
-                align-items: flex-start;
-            }
-
-            .exam-list .btn-brand {
-                width: 100%;
-            }
-
-            .result-top {
-                flex-wrap: wrap;
-            }
-
-            .chart-box {
-                height: 260px;
-            }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                transition: none !important;
-                animation: none !important;
-            }
-        }
+        @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
     </style>
 </head>
-
 <body>
 
-<!-- NAVBAR -->
 <div th:replace="~{fragments :: navbar}"></div>
 
 <main class="page">
@@ -374,231 +126,112 @@
 
         <!-- Welcome -->
         <div class="welcome">
-
-            <img th:if="${student.profilePicUrl != null
-                         and !#strings.isEmpty(student.profilePicUrl)}"
-                 th:src="@{${student.profilePicUrl}}"
-                 alt="Student profile picture"
-                 class="avatar">
-
-            <svg th:if="${student.profilePicUrl == null
-                         or #strings.isEmpty(student.profilePicUrl)}"
-                 xmlns="http://www.w3.org/2000/svg"
-                 width="52"
-                 height="52"
-                 fill="currentColor"
-                 class="avatar"
-                 viewBox="0 0 16 16"
-                 aria-hidden="true">
-
+            <img th:if="${student.profilePicUrl != null}"
+                 th:src="@{${student.profilePicUrl}}" alt="" class="avatar">
+            <svg th:if="${student.profilePicUrl == null}"
+                 xmlns="http://www.w3.org/2000/svg" width="52" height="52" fill="currentColor"
+                 class="avatar" viewBox="0 0 16 16" aria-hidden="true">
                 <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z"/>
-
-                <path fill-rule="evenodd"
-                      d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
+                <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8zm8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1z"/>
             </svg>
-
             <div>
-                <h1>
-                    Welcome back,
-                    <span th:text="${student.fullName}">Student</span>
-                </h1>
-
+                <h1>Welcome back, <span th:text="${student.fullName}"></span></h1>
                 <p>Here is your performance overview.</p>
             </div>
         </div>
 
         <!-- Unauthorized error -->
-        <div th:if="${param.error == 'unauthorized'}"
-             class="alert alert-danger"
-             role="alert">
-
+        <div th:if="${param.error == 'unauthorized'}" class="alert alert-danger" role="alert">
             You are not authorized to review that exam result.
         </div>
 
-        <!-- Statistics -->
+        <!-- Stats -->
         <div class="row g-2 g-sm-3 mb-3">
-
             <div class="col-4">
                 <div class="stat">
                     <i class="bi bi-journal-check" aria-hidden="true"></i>
-
-                    <div class="stat-value" th:text="${totalTaken}">
-                        0
-                    </div>
-
+                    <div class="stat-value" th:text="${totalTaken}">0</div>
                     <div class="stat-label">Exams taken</div>
                 </div>
             </div>
-
             <div class="col-4">
                 <div class="stat">
                     <i class="bi bi-bar-chart-line-fill" aria-hidden="true"></i>
-
-                    <div class="stat-value"
-                         th:text="${#numbers.formatDecimal(averageScore, 1, 1) + '%'}">
-                        0.0%
-                    </div>
-
+                    <div class="stat-value" th:text="${#numbers.formatDecimal(averageScore, 1, 1) + '%'}">0.0%</div>
                     <div class="stat-label">Average score</div>
                 </div>
             </div>
-
             <div class="col-4">
                 <div class="stat">
                     <i class="bi bi-trophy-fill" aria-hidden="true"></i>
-
-                    <div class="stat-value"
-                         th:text="${highestScore} + '%'">
-                        0%
-                    </div>
-
+                    <div class="stat-value" th:text="${highestScore} + '%'">0%</div>
                     <div class="stat-label">Highest score</div>
                 </div>
             </div>
-
         </div>
 
-        <!-- Available exams and score history -->
+        <!-- Available exams + chart -->
         <div class="row g-3 mb-3">
-
-            <!-- Available exams -->
             <div class="col-lg-5">
                 <div class="panel">
+                    <h2><i class="bi bi-pencil-square"></i>Available exams</h2>
 
-                    <h2>
-                        <i class="bi bi-pencil-square"></i>
-                        Available exams
-                    </h2>
-
-                    <p class="empty"
-                       th:if="${#lists.isEmpty(availableExams)}">
-
+                    <p class="empty" th:if="${#lists.isEmpty(availableExams)}">
                         <i class="bi bi-emoji-smile"></i>
-
                         You're all caught up. No new exams are available right now.
                     </p>
 
-                    <ul class="exam-list"
-                        th:unless="${#lists.isEmpty(availableExams)}">
-
+                    <ul class="exam-list" th:unless="${#lists.isEmpty(availableExams)}">
                         <li th:each="exam : ${availableExams}">
-
                             <div>
-                                <p class="exam-title"
-                                   th:text="${exam.title}">
-                                    Exam title
-                                </p>
-
-                                <span class="exam-meta"
-                                      th:text="|${exam.durationInMinutes} minutes, ${#lists.size(exam.questions)} questions|">
-                                    60 minutes, 10 questions
-                                </span>
+                                <p class="exam-title" th:text="${exam.title}">Exam title</p>
+                                <span class="exam-meta" th:text="|${exam.durationInMinutes} minutes, ${#lists.size(exam.questions)} questions|">60 minutes, 10 questions</span>
                             </div>
-
-                            <a th:href="@{/exam/{id}(id=${exam.id})}"
-                               class="btn btn-brand">
-                                <i class="bi bi-play-fill me-1"></i>
-                                Start exam
-                            </a>
-
+                            <a th:href="@{/exam/{id}(id=${exam.id})}" class="btn btn-brand">Start exam</a>
                         </li>
                     </ul>
                 </div>
             </div>
 
-            <!-- Score history BAR CHART -->
             <div class="col-lg-7">
                 <div class="panel">
-
-                    <h2>
-                        <i class="bi bi-bar-chart-fill"></i>
-                        Score history (%)
-                    </h2>
-
+                    <h2><i class="bi bi-graph-up-arrow"></i>Score history (%)</h2>
                     <div class="chart-box" id="chartBox">
-
-                        <canvas id="scoreChart"
-                                role="img"
-                                aria-label="Bar chart showing your exam scores over time">
-                        </canvas>
-
+                        <canvas id="scoreChart" role="img" aria-label="Line chart of your scores over time"></canvas>
                     </div>
                 </div>
             </div>
-
         </div>
 
         <!-- Past results -->
-        <h2 class="h5 mb-3">
-            <i class="bi bi-check-circle-fill me-2"
-               style="color:var(--ok);"></i>
-
-            Your past results
-        </h2>
+        <h2 class="h5 mb-3"><i class="bi bi-check-circle-fill me-2" style="color: var(--ok);"></i>Your past results</h2>
 
         <div class="row g-3">
-
-            <div class="col-12 col-md-6 col-xl-4"
-                 th:each="result : ${pastResults}">
-
+            <div class="col-12 col-md-6 col-xl-4" th:each="result : ${pastResults}">
                 <div class="result-card">
-
                     <div class="result-top">
-
                         <div>
-                            <p class="result-title"
-                               th:text="${result.exam.title}">
-                                Java Basics
-                            </p>
-
-                            <p class="result-date"
-                               th:text="${#temporals.format(result.submissionTime, 'MMM dd, yyyy')}">
-                                Oct 20, 2026
-                            </p>
+                            <p class="result-title" th:text="${result.exam.title}">Java Basics</p>
+                            <p class="result-date" th:text="${#temporals.format(result.submissionTime, 'MMM dd, yyyy')}"></p>
                         </div>
 
-                        <!-- Percentage badge -->
-                        <th:block th:if="${result.totalMarks > 0}"
-                                  th:with="percentage=${(result.scoreAchieved * 100.0) / result.totalMarks}">
-
-                            <span class="pct"
-                                  th:classappend="${percentage >= 70 ? 'pass' : 'fail'}">
-
-                                <i class="bi"
-                                   th:classappend="${percentage >= 70 ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}"
-                                   aria-hidden="true"></i>
-
-                                <span th:text="${#numbers.formatDecimal(percentage, 1, 1) + '%'}">
-                                    75.0%
-                                </span>
-
+                        <!-- 70% or more is a pass: colour plus an icon -->
+                        <th:block th:if="${result.totalMarks > 0}" th:with="percentage=${(result.scoreAchieved * 100.0) / result.totalMarks}">
+                            <span class="pct" th:classappend="${percentage >= 70 ? 'pass' : 'fail'}">
+                                <i class="bi" th:classappend="${percentage >= 70 ? 'bi-check-circle-fill' : 'bi-x-circle-fill'}" aria-hidden="true"></i>
+                                <span th:text="${#numbers.formatDecimal(percentage, 1, 1) + '%'}">75.0%</span>
                             </span>
                         </th:block>
-
-                        <span th:if="${result.totalMarks == 0}"
-                              class="pct na">
-                            N/A
-                        </span>
-
+                        <span th:if="${result.totalMarks == 0}" class="pct na">N/A</span>
                     </div>
 
                     <div class="result-score">
-                        Score:
-                        <strong th:text="${result.scoreAchieved}">15</strong>
-                        /
-                        <span th:text="${result.totalMarks}">20</span>
+                        Score: <strong th:text="${result.scoreAchieved}">15</strong> / <span th:text="${result.totalMarks}">20</span>
                     </div>
 
-                    <a th:href="@{/student/review/{id}(id=${result.id})}"
-                       class="btn btn-ghost mt-auto">
-
-                        <i class="bi bi-eye me-1"></i>
-                        Review answers
-                    </a>
-
+                    <a th:href="@{/student/review/{id}(id=${result.id})}" class="btn btn-ghost mt-auto">Review answers</a>
                 </div>
             </div>
-
         </div>
 
         <p class="empty" th:if="${#lists.isEmpty(pastResults)}">
@@ -609,129 +242,63 @@
     </div>
 </main>
 
-<!-- Bootstrap JavaScript -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Chart.js BAR GRAPH -->
 <script th:inline="javascript">
     /*<![CDATA[*/
 
     const chartLabels = /*[[${chartLabels}]]*/ [];
     const chartData = /*[[${chartData}]]*/ [];
 
-    const chartCanvas = document.getElementById('scoreChart');
-    const chartBox = document.getElementById('chartBox');
-
     if (chartLabels && chartLabels.length > 0) {
-
-        new Chart(chartCanvas.getContext('2d'), {
-            type: 'bar',
-
+        new Chart(document.getElementById('scoreChart').getContext('2d'), {
+            type: 'line',
             data: {
                 labels: chartLabels,
-
                 datasets: [{
                     label: 'Score (%)',
                     data: chartData,
-
-                    backgroundColor: 'rgba(59, 63, 216, 0.82)',
-                    hoverBackgroundColor: '#2b2fb0',
+                    backgroundColor: 'rgba(59, 63, 216, 0.12)',
                     borderColor: '#3b3fd8',
-                    borderWidth: 1,
-                    borderRadius: 7,
-                    borderSkipped: false,
-                    maxBarThickness: 48
+                    borderWidth: 3,
+                    pointBackgroundColor: '#3b3fd8',
+                    pointBorderColor: '#fff',
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    fill: true,
+                    tension: 0.3
                 }]
             },
-
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-
-                interaction: {
-                    mode: 'index',
-                    intersect: false
-                },
-
                 plugins: {
-                    legend: {
-                        display: false
-                    },
-
+                    legend: { display: false },
                     tooltip: {
                         displayColors: false,
-
                         callbacks: {
-                            title: function (items) {
-                                return items.length ? items[0].label : '';
-                            },
-
-                            label: function (context) {
-                                return 'Score: ' + context.parsed.y + '%';
-                            }
+                            label: function (context) { return 'Score: ' + context.parsed.y + '%'; }
                         }
                     }
                 },
-
                 scales: {
                     y: {
                         beginAtZero: true,
-                        min: 0,
                         max: 100,
-
-                        title: {
-                            display: true,
-                            text: 'Score (%)',
-                            font: {
-                                weight: 'bold'
-                            }
-                        },
-
-                        ticks: {
-                            stepSize: 20,
-
-                            callback: function (value) {
-                                return value + '%';
-                            }
-                        },
-
-                        grid: {
-                            color: 'rgba(71, 84, 103, 0.12)'
-                        }
+                        ticks: { callback: function (value) { return value + '%'; } }
                     },
-
                     x: {
-                        title: {
-                            display: true,
-                            text: 'Exams',
-                            font: {
-                                weight: 'bold'
-                            }
-                        },
-
-                        grid: {
-                            display: false
-                        },
-
-                        ticks: {
-                            autoSkip: true,
-                            maxRotation: 45,
-                            minRotation: 0
-                        }
+                        grid: { display: false },
+                        ticks: { maxRotation: 45, autoSkip: true } // keeps long exam names readable on phones
                     }
                 }
             }
         });
-
     } else {
-
-        chartBox.style.height = 'auto';
-
-        chartBox.innerHTML =
-            '<p class="empty">' +
-                '<i class="bi bi-bar-chart-line"></i>' +
-                'Your scores will appear here after your first exam.' +
-            '</p>';
+        // Nothing to draw yet: show a short message instead of a blank box
+        var box = document.getElementById('chartBox');
+        box.style.height = 'auto';
+        box.innerHTML = '<p class="empty"><i class="bi bi-graph-up"></i>Your scores will show here after your first exam.</p>';
     }
 
     /*]]>*/
