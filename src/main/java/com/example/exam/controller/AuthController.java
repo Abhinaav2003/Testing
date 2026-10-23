@@ -25,9 +25,7 @@ public class AuthController {
 
     private static final Set<String> ALLOWED_AVATARS = Set.of(
         "avatar1.png",
-        "avatar2.png",
-        "avatar3.png",
-        "avatar4.png"
+        "avatar2.png"
     );
 
     @GetMapping("/")
@@ -90,7 +88,7 @@ public class AuthController {
         if (avatar == null || !ALLOWED_AVATARS.contains(avatar)) {
             model.addAttribute(
                 "avatarError",
-                "Please select one of the four available avatars."
+                "Please select one of the two available avatars."
             );
         }
 
