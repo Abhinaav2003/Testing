@@ -4,6 +4,12 @@ import com.example.exam.model.ExamAnswer;
 import com.example.exam.model.ExamResult;
 import com.example.exam.model.Question;
 import com.example.exam.repository.ExamResultRepository;
+import com.example.exam.service.ExportService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import com.lowagie.text.DocumentException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,6 +29,9 @@ public class ReviewController {
 
     @Autowired
     private ExamResultRepository examResultRepository;
+
+    @Autowired
+    private ExportService exportService;
 
     @GetMapping("/review/{resultId}")
     public String reviewExam(@PathVariable Long resultId, Model model) {
@@ -59,5 +68,32 @@ public class ReviewController {
         model.addAttribute("studentAnswers", studentAnswersMap);
 
         return "student/review_exam";
+    }
+
+    // Download the student's own answer sheet as a PDF
+    @GetMapping("/review/{resultId}/download-pdf")
+    public ResponseEntity<byte[]> downloadAnswerSheet(@PathVariable Long resultId)
+            throws DocumentException {
+
+        ExamResult result = examResultRepository.findById(resultId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid result Id:" + resultId));
+
+        // Security check: students can only download their own answer sheet
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!result.getStudent().getUsername().equals(authentication.getName())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        byte[] pdf = exportService.buildAnswerSheetPdf(result);
+
+        String fileName = ExportService.safeFileName(result.getExam().getTitle())
+                + "_answer_sheet.pdf";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + fileName + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .contentLength(pdf.length)
+                .body(pdf);
     }
 }

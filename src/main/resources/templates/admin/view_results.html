@@ -271,6 +271,12 @@
                     <span th:text="${#lists.size(results)}">0</span>
                 </div>
 
+                <a th:href="@{/admin/results/{id}/export(id=${exam.id})}"
+                   class="btn btn-success fw-semibold">
+                    <i class="bi bi-file-earmark-excel-fill me-1" aria-hidden="true"></i>
+                    Download Excel
+                </a>
+
                 <div class="sort-control">
                     <label for="sortResults">
                         <i class="bi bi-sort-down me-1" aria-hidden="true"></i>

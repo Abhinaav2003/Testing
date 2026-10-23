@@ -116,6 +116,9 @@
                     <a th:href="@{/student/review/{id}(id=${result.id})}" class="btn btn-ghost mt-auto">
                         <i class="bi bi-search me-2"></i>Review answers
                     </a>
+                    <a th:href="@{/student/review/{id}/download-pdf(id=${result.id})}" class="btn btn-brand">
+                        <i class="bi bi-file-earmark-pdf me-2"></i>Download answer sheet (PDF)
+                    </a>
                 </div>
             </div>
         </div>

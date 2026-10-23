@@ -11,8 +11,12 @@ import com.example.exam.repository.ExamRepository;
 import com.example.exam.repository.ExamResultRepository;
 import com.example.exam.repository.QuestionRepository;
 import com.example.exam.repository.UserRepository;
+import com.example.exam.service.ExportService;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -21,6 +25,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -45,6 +50,9 @@ public class AdminController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private ExportService exportService;
 
     // ==================== ADMIN DASHBOARD ====================
 
@@ -185,6 +193,35 @@ public class AdminController {
         model.addAttribute("results", results);
 
         return "admin/view_results";
+    }
+
+    // ==================== EXPORT MARKS TO EXCEL ====================
+
+    @GetMapping("/results/{examId}/export")
+    public ResponseEntity<byte[]> exportResultsToExcel(
+            @PathVariable Long examId) throws IOException {
+
+        Exam exam = examRepository.findById(examId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Invalid exam ID: " + examId));
+
+        List<ExamResult> results =
+                examResultRepository
+                        .findByExamOrderBySubmissionTimeDesc(exam);
+
+        byte[] file = exportService.buildMarksWorkbook(exam, results);
+
+        String fileName = ExportService.safeFileName(exam.getTitle())
+                + "_marks.xlsx";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + fileName + "\"")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentLength(file.length)
+                .body(file);
     }
 
     // ==================== DELETE EXAM ====================
